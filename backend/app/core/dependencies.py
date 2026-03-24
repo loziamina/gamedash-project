@@ -10,12 +10,12 @@ from app.config import SECRET_KEY
 # Token récupération depuis header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-
 #  GET CURRENT USER
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ):
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         email = payload.get("sub")
