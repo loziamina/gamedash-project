@@ -61,7 +61,7 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # 🔒 sécurité
+    # sécurité
     if current_user.id != user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not allowed")
 
