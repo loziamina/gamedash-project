@@ -1,4 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
+from app.database import SessionLocal
+from app.models.user import User
 
 router = APIRouter()
 
@@ -9,27 +12,49 @@ waiting_players = []
 async def websocket_matchmaking(websocket: WebSocket):
     await websocket.accept()
 
-    # ajouter joueur
-    waiting_players.append(websocket)
+    db: Session = SessionLocal()
 
     try:
-        # si 2 joueurs → match
-        if len(waiting_players) >= 2:
+        # recevoir user_id
+        user_id = int(await websocket.receive_text())
 
-            player1 = waiting_players.pop(0)
-            player2 = waiting_players.pop(0)
+        user = db.query(User).get(user_id)
+
+        if not user:
+            await websocket.close()
+            return
+
+        # chercher match proche ELO
+        matched = None
+
+        for player in waiting_players:
+            other_user = player["user"]
+
+            if abs(other_user.elo - user.elo) <= 100:
+                matched = player
+                break
+
+        if matched:
+            waiting_players.remove(matched)
 
             match_data = {
                 "type": "match_found",
-                "players": ["player1", "player2"]
+                "players": [user.id, matched["user"].id]
             }
 
-            await player1.send_json(match_data)
-            await player2.send_json(match_data)
+            await websocket.send_json(match_data)
+            await matched["ws"].send_json(match_data)
+
+        else:
+            waiting_players.append({
+                "ws": websocket,
+                "user": user
+            })
 
         while True:
             await websocket.receive_text()
 
     except WebSocketDisconnect:
-        if websocket in waiting_players:
-            waiting_players.remove(websocket)
+        waiting_players[:] = [
+            p for p in waiting_players if p["ws"] != websocket
+        ]
