@@ -4,7 +4,9 @@ from app.models import user
 from app.routes import auth
 from app.routes import user
 
-Base.metadata.create_all(bind=engine)
+# IMPORT ROUTES
+from app.routes import auth
+from app.routes import admin
 
 app = FastAPI()
 
