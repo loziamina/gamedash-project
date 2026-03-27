@@ -9,3 +9,4 @@ class User(Base):
     password = Column(String)
     pseudo = Column(String)
     role = Column(String, default="player")
+    elo = Column(Integer, default=1000)
