@@ -142,3 +142,25 @@ def match_result(
         "winner_elo": winner.elo,
         "loser_elo": loser.elo
     }
+    
+@router.post("/finish")
+def finish_match(
+    match_id: int,
+    winner_id: int,
+    db: Session = Depends(get_db)
+):
+    match = db.query(Match).filter(Match.id == match_id).first()
+
+    if not match:
+        return {"message": "Match not found"}
+
+    match.status = "finished"
+    match.winner_id = winner_id
+
+    db.commit()
+
+    return {
+        "message": "Match finished",
+        "match_id": match.id,
+        "winner": winner_id
+    }
