@@ -1,3 +1,151 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(14, 165, 233, 0.18), transparent 35%),
+    radial-gradient(circle at bottom, rgba(236, 72, 153, 0.18), transparent 30%),
+    #020617;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: transparent;
+  color: #f8fafc;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 128, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+    transform: scale(1) rotate(90deg);
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-100px) scale(0) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 20px rgb(0 212 255 / 0.8));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 30px rgb(255 0 128 / 0.8));
+  }
+}
+
+@keyframes shockwave {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(0.98);
+  }
+}
+
+.login-card {
+  backdrop-filter: blur(30px);
+  border-radius: 30px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+  animation: cardFloat 6s ease-in-out infinite;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  box-shadow:
+    0 25px 50px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+@keyframes cardFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.scanner {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 0.25rem;
+  background: linear-gradient(to right, transparent, #22d3ee, transparent);
+  box-shadow: 0 0 20px rgb(0 212 255 / 0.5);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    top: -100%;
+  }
+
+  100% {
+    top: 100%;
+  }
+}
+
+.particles-container {
+  pointer-events: none;
+}
+
+.particle {
+  box-shadow: 0 0 10px currentColor;
+}
+
+.shadow-glow {
+  box-shadow: 0 0 20px rgb(0 212 255 / 0.5);
+}
+
+.animate-glow {
+  animation: glow 3s infinite;
+}
