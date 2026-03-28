@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GameDash - Connexion</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@400;600;800&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Orbitron', monospace;
+      height: 100vh;
+      background: radial-gradient(ellipse at center, #0A0F1A 0%, #000000 70%);
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* FOND NÉON PULSANT */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 0, 128, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.2) 0%, transparent 50%);
+      animation: pulse 4s ease-in-out infinite;
+      z-index: 1;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.7;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+    }
+
+    /* GRID 3D FOND */
+    .grid-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 0, 128, 0.1) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridMove 20s linear infinite;
+      z-index: 1;
+    }
+
+    @keyframes gridMove {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      100% {
+        transform: translate(50px, 50px);
+      }
+    }
+
+    /* PARTICULES */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #00D4FF, #FF0080);
+      animation: float 8s infinite linear;
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) scale(0) rotate(0deg);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+        transform: scale(1) rotate(90deg);
+      }
+
+      90% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-100px) scale(0) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* CONTENEUR PRINCIPAL */
+    .login-container {
+      position: relative;
+      z-index: 10;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* CARTE LOGIN */
+    .login-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(30px);
+      border-radius: 30px;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      padding: 60px 50px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      animation: cardFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(transparent, rgba(0, 212, 255, 0.1), transparent 30%);
+      animation: rotate 4s linear infinite;
+      z-index: 0;
+    }
+
+    .login-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: inherit;
+      border-radius: 30px;
+      padding: 3px;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      z-index: 1;
+    }
+
+    .login-card>* {
+      position: relative;
+      z-index: 2;
+    }
+
+    @keyframes rotate {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* LOGO */
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo h1 {
+      font-size: 42px;
+      font-weight: 900;
+      background: linear-gradient(45deg, #00D4FF 0%, #FF0080 50%, #FFD700 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 40px rgba(0, 212, 255, 0.5);
+      letter-spacing: -2px;
+      margin-bottom: 10px;
+    }
+
+    .logo p {
+      font-family: 'Exo 2', sans-serif;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 16px;
+    }
+
+    /* CHAMPS INPUT */
+    .input-group {
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 20px 25px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(0, 212, 255, 0.3);
+      border-radius: 15px;
+      font-family: 'Orbitron', monospace;
+      font-size: 16px;
+      color: #fff;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #00D4FF;
+      box-shadow:
+        0 0 20px rgba(0, 212, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transform: scale(1.02);
+    }
+
+    .input-label {
+      position: absolute;
+      left: 25px;
+      top: 20px;
+      font-size: 14px;
+      color: rgba(0, 212, 255, 0.7);
+      pointer-events: none;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .input-field:focus+.input-label,
+    .input-field:not(:placeholder-shown)+.input-label {
+      top: -10px;
+      left: 20px;
+      font-size: 12px;
+      background: rgba(10, 15, 26, 0.9);
+      padding: 0 10px;
+      border-radius: 10px;
+    }
+
+    /* BOUTON PRINCIPAL */
+    .btn-primary {
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(45deg, #00D4FF, #0099CC);
+      border: none;
+      border-radius: 20px;
+      font-family: 'Orbitron', monospace;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 20px 50px rgba(0, 212, 255, 0.6);
+    }
+
+    .btn-primary:active {
+      animation: shockwave 0.4s ease;
+      transform: scale(0.98);
+    }
+
+    @keyframes shockwave {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(0.98);
+      }
+    }
+
+    /* SSO BUTTONS */
+    .sso-section {
+      margin: 40px 0;
+      text-align: center;
+    }
+
+    .sso-title {
+      margin-bottom: 25px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .sso-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .sso-btn {
+      padding: 15px 25px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .sso-btn:hover {
+      border-color: #00D4FF;
+      background: rgba(0, 212, 255, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(0, 212, 255, 0.3);
+    }
+
+    /* LIEN INSCRIPTION */
+    .signup-link {
+      text-align: center;
+      margin-top: 30px;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+    }
+
+    .signup-link a {
+      color: #00D4FF;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .signup-link a:hover {
+      text-shadow: 0 0 10px #00D4FF;
+    }
+
+    /* SCANNER SECURITY */
+    .scanner {
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, #00D4FF, transparent);
+      box-shadow: 0 0 20px #00D4FF;
+      animation: scan 2s linear infinite;
+      z-index: 3;
+    }
+
+    @keyframes scan {
+      0% {
+        top: -100%;
+      }
+
+      100% {
+        top: 100%;
+      }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 40px 30px;
+        margin: 20px;
+      }
+
+      .logo h1 {
+        font-size: 32px;
+      }
+
+      .sso-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- FONDS -->
+  <div class="grid-bg"></div>
+  <div class="particles" id="particles"></div>
+
+  <!-- CONTENEUR -->
+  <div class="login-container">
+    <div class="login-card">
+      <div class="scanner"></div>
+
+      <!-- LOGO -->
+      <div class="logo">
+        <h1>GAME DASH</h1>
+        <p>Entrez dans l'arène</p>
+      </div>
+
+      <!-- FORMULAIRE -->
+      <form id="loginForm">
+        <div class="input-group">
+          <input type="email" class="input-field" id="email" placeholder=" " required>
+          <label class="input-label" for="email">Email</label>
+        </div>
+
+        <div class="input-group">
+          <input type="password" class="input-field" id="password" placeholder=" " required>
+          <label class="input-label" for="password">Mot de passe</label>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          🔐 ENTRER DANS L'ARÈNE
+        </button>
+      </form>
+
+      <!-- SSO -->
+      <div class="sso-section">
+        <div class="sso-title">OU</div>
+        <div class="sso-buttons">
+          <a href="#" class="sso-btn">
+            <span style="font-size: 24px;">🎮</span>
+            Steam
+          </a>
+          <a href="#" class="sso-btn">
+            <span style="font-size: 24px;">💬</span>
+            Discord
+          </a>
+          <a href="#" class="sso-btn">
+            <span style="font-size: 24px;">🔵</span>
+            Google
+          </a>
+        </div>
+      </div>
+
+      <!-- LIEN INSCRIPTION -->
+      <div class="signup-link">
+        Pas de compte ? <a href="#">Créer un compte</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PARTICULES
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.width = particle.style.height = (Math.random() * 6 + 2) + 'px';
+        particle.style.animationDuration = (Math.random() * 5 + 6) + 's';
+        particle.style.animationDelay = Math.random() * 3 + 's';
+        container.appendChild(particle);
+
+        // Nettoyage
+        setTimeout(() => particle.remove(), 11000);
+      }
+    }
+
+    // Génère particules continues
+    createParticles();
+    setInterval(createParticles, 2000);
+
+    // ANIMATIONS INPUT
+    const inputs = document.querySelectorAll('.input-field');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function () {
+        this.parentElement.style.transform = 'scale(1.02)';
+      });
+
+      input.addEventListener('blur', function () {
+        this.parentElement.style.transform = 'scale(1)';
+      });
+    });
+
+    // SUBMIT FORM
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Effet de chargement
+      const btn = this.querySelector('.btn-primary');
+      btn.innerHTML = '🔥 CONNEXION...';
+      btn.style.background = 'linear-gradient(45deg, #FFD700, #FFAA00)';
+
+      // Simulation connexion (3s)
+      setTimeout(() => {
+        // Redirection vers dashboard (remplace par ton lien)
+        window.location.href = 'gamedash.html'; // ou dashboard.html
+      }, 1500);
+    });
+
+    // Effet clavier (glow sur input)
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        document.querySelector('.btn-primary').click();
+      }
+    });
+
+    // Easter egg: tape "gamedash" rapidement
+    let code = '';
+    document.addEventListener('keypress', function (e) {
+      code += e.key.toLowerCase();
+      if (code.includes('gamedash')) {
+        document.body.style.background = 'linear-gradient(45deg, #FF0080, #00D4FF)';
+        setTimeout(() => {
+          document.body.style.background = '';
+        }, 1000);
+        code = '';
+      }
+      if (code.length > 8) code = code.slice(-8);
+    });
+  </script>
+</body>
+
+</html>
