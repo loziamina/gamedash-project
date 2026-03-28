@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String
 from app.database import Base
 
 class User(Base):
@@ -10,3 +10,4 @@ class User(Base):
     pseudo = Column(String)
     role = Column(String, default="player")
     elo = Column(Integer, default=1000)
+    is_active = Column(Boolean, default=True)

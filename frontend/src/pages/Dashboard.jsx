@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import PageWrapper from "../components/PageWrapper";
+import { getMe } from "../services/api";
 
 export default function Dashboard() {
   const [status, setStatus] = useState("Connexion...");
   const [players, setPlayers] = useState(0);
   const [elo, setElo] = useState(0);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    getMe()
+      .then(setCurrentUser)
+      .catch((error) => console.error("Unable to load current user", error));
+
     const token = localStorage.getItem("token");
 
     const ws = new WebSocket(
@@ -81,6 +87,15 @@ export default function Dashboard() {
           >
             Voir evolution ELO
           </button>
+
+          {currentUser?.role === "admin" && (
+            <button
+              onClick={() => window.location.href = "/admin"}
+              className="rounded-xl bg-red-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-red-500/20 active:scale-95"
+            >
+              Admin Panel
+            </button>
+          )}
         </div>
       </div>
     </PageWrapper>
