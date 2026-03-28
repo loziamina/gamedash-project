@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.core.dependencies import get_current_user
@@ -8,6 +9,30 @@ from app.models.match import Match
 from app.core.ws_manager import manager
 
 router = APIRouter()
+
+
+@router.get("/history")
+def get_history(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    matches = db.query(Match).filter(
+        or_(Match.player1_id == user.id, Match.player2_id == user.id)
+    ).order_by(Match.created_at.desc()).all()
+
+    result = []
+
+    for match in matches:
+        result.append({
+            "match_id": match.id,
+            "player1": match.player1_id,
+            "player2": match.player2_id,
+            "winner": match.winner_id,
+            "status": match.status,
+            "date": match.created_at
+        })
+
+    return result
 
 
 # JOIN QUEUE
