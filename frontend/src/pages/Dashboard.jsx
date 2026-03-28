@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PageWrapper from "../components/PageWrapper";
+import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 
 export default function Dashboard() {
@@ -68,9 +69,12 @@ export default function Dashboard() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
-        <h1 className="mb-8 text-4xl font-bold text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-          GameDash Dashboard
-        </h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <h1 className="text-4xl font-bold text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+            GameDash Dashboard
+          </h1>
+          <UserMenu user={currentUser} />
+        </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
           <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20">

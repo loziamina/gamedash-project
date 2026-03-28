@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import PageWrapper from "../components/PageWrapper";
+import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import { banUser, getAdminStats, getUsers, unbanUser } from "../services/admin";
 
@@ -66,9 +67,12 @@ export default function Admin() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
-        <h1 className="mb-8 text-4xl text-red-400 drop-shadow-[0_0_20px_rgba(248,113,113,0.6)]">
-          ADMIN PANEL
-        </h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <h1 className="text-4xl text-red-400 drop-shadow-[0_0_20px_rgba(248,113,113,0.6)]">
+            ADMIN PANEL
+          </h1>
+          <UserMenu user={currentUser} />
+        </div>
 
         <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="dashboard-card rounded-2xl p-4">

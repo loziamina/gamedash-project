@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import PageWrapper from "../components/PageWrapper";
+import UserMenu from "../components/UserMenu";
+import { getMe } from "../services/api";
 import { joinQueue, leaveQueue } from "../services/matchmaking";
 
 export default function Matchmaking() {
   const [status, setStatus] = useState("Idle");
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    getMe().then(setCurrentUser).catch((error) => console.error(error));
+
     const token = localStorage.getItem("token");
 
     const ws = new WebSocket(
@@ -63,9 +68,12 @@ export default function Matchmaking() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
-        <h1 className="mb-8 text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-          Matchmaking
-        </h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+            Matchmaking
+          </h1>
+          <UserMenu user={currentUser} />
+        </div>
 
         <div className="mb-6 flex gap-4">
           <button

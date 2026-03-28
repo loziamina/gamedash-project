@@ -6,10 +6,17 @@ from starlette.responses import RedirectResponse
 
 from app.config import BACKEND_URL, FRONTEND_URL
 from app.core.google import oauth
+from app.core.mail import send_email
+from app.core.reset_tokens import create_reset_token, verify_reset_token
 from app.core.security import ALGORITHM, SECRET_KEY, create_access_token, hash_password, verify_password
 from app.database import SessionLocal, get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin
+from app.schemas.user import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    UserCreate,
+    UserLogin,
+)
 from app.utils.rank import get_rank
 
 router = APIRouter()
@@ -56,6 +63,45 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "access_token": token,
         "token_type": "bearer",
     }
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+
+    if user and user.is_active:
+        token = create_reset_token(user.email)
+        reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+        body = (
+            "Bonjour,\n\n"
+            "Vous avez demande la reinitialisation de votre mot de passe GameDash.\n"
+            f"Cliquez sur ce lien pour definir un nouveau mot de passe : {reset_link}\n\n"
+            "Ce lien expire dans 1 heure.\n"
+            "Si vous n'etes pas a l'origine de cette demande, ignorez simplement cet email."
+        )
+        send_email(user.email, "GameDash - Reinitialisation du mot de passe", body)
+
+    return {
+        "message": "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye."
+    }
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    email = verify_reset_token(payload.token)
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password = hash_password(payload.password)
+    db.commit()
+
+    return {"message": "Password reset successful"}
 
 
 def get_current_user(

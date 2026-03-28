@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import PageWrapper from "../components/PageWrapper";
+import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import { getHistory } from "../services/match";
 
 export default function History() {
   const [matches, setMatches] = useState([]);
   const [userId, setUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -13,6 +15,7 @@ export default function History() {
         const [history, me] = await Promise.all([getHistory(), getMe()]);
         setMatches(history);
         setUserId(me.id);
+        setCurrentUser(me);
       } catch (error) {
         console.error("Unable to load history", error);
       }
@@ -32,9 +35,12 @@ export default function History() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
-        <h1 className="mb-10 bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-center text-5xl font-black text-transparent">
-          MATCH HISTORY
-        </h1>
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <h1 className="bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-5xl font-black text-transparent">
+            MATCH HISTORY
+          </h1>
+          <UserMenu user={currentUser} />
+        </div>
 
         <div className="mx-auto max-w-3xl space-y-6">
           {matches.map((match) => {

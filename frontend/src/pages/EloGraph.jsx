@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import PageWrapper from "../components/PageWrapper";
+import UserMenu from "../components/UserMenu";
+import { getMe } from "../services/api";
 import { getEloHistory } from "../services/elo";
 
 export default function EloGraph() {
   const [data, setData] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    getMe().then(setCurrentUser).catch((error) => console.error(error));
     fetchData();
   }, []);
 
@@ -24,9 +28,12 @@ export default function EloGraph() {
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
-        <h1 className="mb-8 text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-          ELO Progression
-        </h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+            ELO Progression
+          </h1>
+          <UserMenu user={currentUser} />
+        </div>
 
         <div className="dashboard-card rounded-xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20">
           <ResponsiveContainer width="100%" height={300}>
