@@ -1,13 +1,35 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './index.css'
+import { AnimatePresence } from "framer-motion";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import Matchmaking from "./pages/Matchmaking";
+import Game from "./pages/Game";
+import History from "./pages/History";
+import EloGraph from "./pages/EloGraph";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/matchmaking" element={<Matchmaking />} />
+        <Route path="/game" element={<Game />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/elo" element={<EloGraph />} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   return (
-    <div className="flex items-center justify-center h-screen">
-      <h1 className="text-4xl text-green-400">
-        hello world
-      </h1>
-    </div>
+    <Router>
+      <AnimatedRoutes />
+    </Router>
   );
 }

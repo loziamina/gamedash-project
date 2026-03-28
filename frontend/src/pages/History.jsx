@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import PageWrapper from "../components/PageWrapper";
+import { getMe } from "../services/api";
 import { getHistory } from "../services/match";
 
 export default function History() {
@@ -6,24 +8,18 @@ export default function History() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    fetchHistory();
-
-    const token = localStorage.getItem("token");
-
-    if (token) {
+    const loadHistory = async () => {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUserId(payload.sub_id || payload.id || payload.user_id || null);
+        const [history, me] = await Promise.all([getHistory(), getMe()]);
+        setMatches(history);
+        setUserId(me.id);
       } catch (error) {
-        console.error("Unable to decode token", error);
+        console.error("Unable to load history", error);
       }
-    }
-  }, []);
+    };
 
-  const fetchHistory = async () => {
-    const data = await getHistory();
-    setMatches(data);
-  };
+    loadHistory();
+  }, []);
 
   const getResult = (match) => {
     if (!match.winner) {
@@ -34,75 +30,77 @@ export default function History() {
   };
 
   return (
-    <div className="min-h-screen bg-black p-6 text-white">
-      <h1 className="mb-10 bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-center text-5xl font-black text-transparent">
-        MATCH HISTORY
-      </h1>
+    <PageWrapper>
+      <div className="min-h-screen p-6 text-white">
+        <h1 className="mb-10 bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-center text-5xl font-black text-transparent">
+          MATCH HISTORY
+        </h1>
 
-      <div className="mx-auto max-w-3xl space-y-6">
-        {matches.map((match) => {
-          const result = getResult(match);
+        <div className="mx-auto max-w-3xl space-y-6">
+          {matches.map((match) => {
+            const result = getResult(match);
 
-          return (
-            <div
-              key={match.match_id}
-              className={`
+            return (
+              <div
+                key={match.match_id}
+                className={`
                 rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02]
                 ${result === "win" ? "border-green-400 bg-green-500/10 shadow-lg shadow-green-500/30" : ""}
                 ${result === "lose" ? "border-red-400 bg-red-500/10 shadow-lg shadow-red-500/30" : ""}
                 ${result === "pending" ? "border-yellow-400 bg-yellow-500/10" : ""}
               `}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-lg font-bold">
-                  {match.player1} vs {match.player2}
-                </p>
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-lg font-bold">
+                    {match.player1} vs {match.player2}
+                  </p>
 
-                <span className="text-sm text-gray-400">
-                  {new Date(match.date).toLocaleString()}
-                </span>
-              </div>
+                  <span className="text-sm text-gray-400">
+                    {new Date(match.date).toLocaleString()}
+                  </span>
+                </div>
 
-              <div className="flex items-center justify-between">
-                <div className="text-sm">Match ID: {match.match_id}</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">Match ID: {match.match_id}</div>
 
-                <div>
-                  {result === "win" && (
-                    <span className="text-xl font-bold text-green-400 animate-pulse">
-                      VICTOIRE
-                    </span>
-                  )}
+                  <div>
+                    {result === "win" && (
+                      <span className="text-xl font-bold text-green-400 animate-pulse">
+                        VICTOIRE
+                      </span>
+                    )}
 
-                  {result === "lose" && (
-                    <span className="text-xl font-bold text-red-400 animate-pulse">
-                      DEFAITE
-                    </span>
-                  )}
+                    {result === "lose" && (
+                      <span className="text-xl font-bold text-red-400 animate-pulse">
+                        DEFAITE
+                      </span>
+                    )}
 
-                  {result === "pending" && (
-                    <span className="text-yellow-400">EN COURS</span>
-                  )}
+                    {result === "pending" && (
+                      <span className="text-yellow-400">EN COURS</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {matches.length === 0 && (
-          <p className="mt-20 text-center text-gray-400">
-            Aucun match joue pour le moment...
-          </p>
-        )}
-      </div>
+          {matches.length === 0 && (
+            <p className="mt-20 text-center text-gray-400">
+              Aucun match joue pour le moment...
+            </p>
+          )}
+        </div>
 
-      <div className="mt-10 text-center">
-        <button
-          onClick={() => window.location.href = "/dashboard"}
-          className="rounded-xl bg-cyan-500 px-6 py-3 transition hover:scale-105"
-        >
-          Retour Dashboard
-        </button>
+        <div className="mt-10 text-center">
+          <button
+            onClick={() => window.location.href = "/dashboard"}
+            className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95"
+          >
+            Retour Dashboard
+          </button>
+        </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

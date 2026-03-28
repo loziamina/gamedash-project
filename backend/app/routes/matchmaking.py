@@ -35,6 +35,33 @@ def get_history(
     return result
 
 
+@router.get("/elo-history")
+def elo_history(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    matches = db.query(Match).filter(
+        or_(Match.player1_id == user.id, Match.player2_id == user.id),
+        Match.status == "finished"
+    ).order_by(Match.created_at).all()
+
+    elo = 1000
+    history = []
+
+    for match in matches:
+        if match.winner_id == user.id:
+            elo += 10
+        else:
+            elo -= 10
+
+        history.append({
+            "elo": elo,
+            "date": match.created_at
+        })
+
+    return history
+
+
 # JOIN QUEUE
 @router.post("/join")
 async def join_queue(
@@ -94,11 +121,13 @@ async def join_queue(
             #  ENVOI WS AUX 2 USERS
             await manager.send_to_user(p1.user_id, {
                 "type": "match_found",
+                "match_id": match.id,
                 "opponent": p2.user_id
             })
 
             await manager.send_to_user(p2.user_id, {
                 "type": "match_found",
+                "match_id": match.id,
                 "opponent": p1.user_id
             })
 
