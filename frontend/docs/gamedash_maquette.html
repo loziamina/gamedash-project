@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameDash - Dashboard Gaming</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #0A0F1A 0%, #1A1F2E 50%, #0A0F1A 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: #fff;
+            overflow-x: hidden;
+            height: 100vh;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* PARTICULES COSMIQUES */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00D4FF;
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* HUD TOPBAR */
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: 1px solid rgba(0,212,255,0.3);
+            box-shadow: 0 8px 32px rgba(0,212,255,0.1);
+            z-index: 100;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        /* DASHBOARD PRINCIPAL */
+        .dashboard {
+            margin-top: 120px;
+            padding: 0 20px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* CARDS GLOWING */
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(0,212,255,0.2);
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.3),
+                0 0 30px rgba(0,212,255,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,212,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.4),
+                0 0 50px rgba(0,212,255,0.3);
+            border-color: #00D4FF;
+        }
+
+        /* TITRE PRINCIPAL */
+        .title {
+            font-size: 48px;
+            font-weight: 900;
+            text-align: center;
+            background: linear-gradient(45deg, #00D4FF, #FF0080, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 50px;
+            text-shadow: 0 0 30px rgba(0,212,255,0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px #00D4FF); }
+            to { filter: drop-shadow(0 0 30px #FF0080); }
+        }
+
+        /* BOUTONS GAMING */
+        .btn {
+            background: linear-gradient(45deg, #00D4FF, #0099CC);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,212,255,0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            animation: shockwave 0.3s ease;
+        }
+
+        @keyframes shockwave {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(0.95); }
+        }
+
+        /* GRID DASHBOARD */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        /* METRICS */
+        .metric {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FFD700, #FF0080);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .title { font-size: 32px; }
+            .grid { grid-template-columns: 1fr; }
+            .hud { 
+                padding: 10px 20px; 
+                font-size: 12px;
+                width: 90%;
+            }
+        }
+
+        /* SCANLINES */
+        .scanlines::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(transparent 50%, rgba(0,0,0,0.1) 50%),
+                linear-gradient(90deg, transparent 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px, 4px 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <!-- PARTICULES COSMIQUES -->
+    <div class="particles" id="particles"></div>
+
+    <!-- HUD TOPBAR -->
+    <div class="hud">
+        👤 <span style="color: #00D4FF;">NeoPlayer</span> | LVL 47 | MMR <span style="color: #FFD700;">2450</span> | Gold I
+        <span style="float: right;">⚡ Matchmaking | 🛒 Boutique | 🗺️ Maps</span>
+    </div>
+
+    <!-- DASHBOARD PRINCIPAL -->
+    <div class="dashboard">
+        <h1 class="title">GAME DASH</h1>
+        
+        <!-- GRID PRINCIPALE -->
+        <div class="grid">
+            <div class="card scanlines">
+                <div class="metric">
+                    <div class="metric-value">2450</div>
+                    <div>MMR</div>
+                    <div style="color: #FFD700; font-size: 24px;">Gold I</div>
+                    <div style="font-size: 14px; opacity: 0.8;">+12 pts aujourd'hui</div>
+                </div>
+            </div>
+
+            <div class="card scanlines">
+                <div class="metric">
+                    <div class="metric-value" style="background: linear-gradient(45deg, #00FF88, #00D4FF);-webkit-background-clip: text;-webkit-text-fill-color: transparent;">62%</div>
+                    <div>Winrate</div>
+                    <div style="font-size: 18px;">45k matchs</div>
+                </div>
+            </div>
+
+            <div class="card scanlines">
+                <div class="metric">
+                    <div class="metric-value" style="color: #FF0080;">1250</div>
+                    <div>Coins</div>
+                    <div style="font-size: 14px; opacity: 0.8;">💎 45 Gems</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DERNIERS MATCHS -->
+        <div class="card" style="grid-column: 1/-1;">
+            <h2 style="margin-bottom: 20px; color: #00D4FF;">⚔️ DERNIERS MATCHS</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; background: rgba(255,0,128,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,0,128,0.3);">
+                    <div style="color: #00FF88;">✅ VICTOIRE</div>
+                    <div>Classé • 12min</div>
+                    <div style="font-size: 24px; color: #FFD700;">+25 MMR</div>
+                </div>
+                <div style="flex: 1; min-width: 250px; background: rgba(255,0,0,0.1); border-radius: 15px; padding: 20px; border: 1px solid rgba(255,0,0,0.3);">
+                    <div style="color: #FF4444;">❌ DÉFAITE</div>
+                    <div>Fun • 8min</div>
+                    <div style="font-size: 24px; color: #FF8888;">-15 MMR</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOUTONS ACTIONS -->
+        <div style="text-align: center; margin-top: 50px;">
+            <button class="btn" onclick="joinQueue()">⚡ REJOINDRE FILE</button>
+            <button class="btn" style="background: linear-gradient(45deg, #FF0080, #CC0066); margin-left: 20px;" onclick="openShop()">🛒 BOUTIQUE</button>
+            <button class="btn" style="background: linear-gradient(45deg, #FFD700, #FFAA00); margin-left: 20px;" onclick="openMaps()">🗺️ MES MAPS</button>
+        </div>
+    </div>
+
+    <script>
+        // GÉNÉRATEUR PARTICULES
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // ACTIONS BOUTONS
+        function joinQueue() {
+            alert('🔥 RECHERCHE DE MATCH EN COURS...\nTemps attente: 00:23\nPosition: 3/12');
+        }
+
+        function openShop() {
+            alert('🛒 BOUTIQUE OUVERTE\nCoins: 1250 💰 | Gems: 45 💎');
+        }
+
+        function openMaps() {
+            alert('🗺️ GESTION DES MAPS\nCosmoRush v2.1 • 4.8⭐ • 1.2k tests');
+        }
+
+        // INIT
+        createParticles();
+        setInterval(createParticles, 5000);
+    </script>
+</body>
+</html>
