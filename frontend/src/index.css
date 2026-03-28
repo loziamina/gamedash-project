@@ -149,3 +149,9 @@ body {
 .animate-glow {
   animation: glow 3s infinite;
 }
+
+.dashboard-card {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
