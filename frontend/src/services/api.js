@@ -47,3 +47,19 @@ export async function register({ pseudo, email, password }) {
 
   return response.json();
 }
+
+export async function getMe() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to fetch current user");
+  }
+
+  return response.json();
+}
