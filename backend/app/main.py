@@ -5,7 +5,7 @@ from app.routes import user
 from app.routes import admin
 from app.routes import matchmaking
 from app.routes import matchmaking_ws
-
+from app.routes import dashboard
 
 
 Base.metadata.create_all(bind=engine)
@@ -16,6 +16,7 @@ app.include_router(admin.router, prefix="/auth", tags=["Admin"])
 app.include_router(user.router, prefix="/users", tags=["Users"])
 app.include_router(matchmaking.router, prefix="/matchmaking", tags=["Matchmaking"])
 app.include_router(matchmaking_ws.router, tags=["Matchmaking WS"])
+app.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 @app.get("/")
 def root():
     return {"message": "GameDash API running "}
