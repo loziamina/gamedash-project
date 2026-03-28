@@ -6,6 +6,7 @@ from app.config import SECRET_KEY
 from app.core.ws_manager import manager
 from app.database import SessionLocal
 from app.models.user import User
+from app.utils.rank import get_rank
 
 router = APIRouter()
 
@@ -49,7 +50,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await websocket.send_json({
         "type": "elo",
-        "elo": user.elo
+        "elo": user.elo,
+        "rank": get_rank(user.elo)
     })
 
     try:

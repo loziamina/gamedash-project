@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin
 from app.core.security import hash_password, verify_password, create_access_token, SECRET_KEY, ALGORITHM
+from app.utils.rank import get_rank
 
 router = APIRouter()
 
@@ -81,7 +82,9 @@ def get_me(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "pseudo": current_user.pseudo,
-        "role": current_user.role
+        "role": current_user.role,
+        "elo": current_user.elo,
+        "rank": get_rank(current_user.elo),
     }
     
 def require_admin(current_user: User = Depends(get_current_user)):
