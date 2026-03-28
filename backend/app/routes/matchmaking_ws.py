@@ -29,7 +29,10 @@ async def websocket_endpoint(websocket: WebSocket):
 
     db: Session = SessionLocal()
 
-    user = db.query(User).filter(User.email == email).first()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+    finally:
+        db.close()
 
     if not user:
         await websocket.close()
