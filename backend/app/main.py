@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
+from app.config import SECRET_KEY
 from app.database import Base, engine, ensure_schema
 from app.routes import admin, auth, dashboard, matchmaking, matchmaking_ws, user
 
@@ -8,6 +10,11 @@ Base.metadata.create_all(bind=engine)
 ensure_schema()
 
 app = FastAPI()
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SECRET_KEY,
+)
 
 app.add_middleware(
     CORSMiddleware,
