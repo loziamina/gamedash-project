@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import PageWrapper from "../components/PageWrapper";
+import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import { finishMatch } from "../services/game";
 
@@ -72,9 +73,14 @@ export default function Game() {
   return (
     <PageWrapper>
       <div className="flex min-h-screen flex-col items-center justify-center text-white">
-        <h1 className="mb-10 text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-          GAME SESSION
-        </h1>
+        <div className="absolute left-0 top-0 w-full p-6">
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+              GAME SESSION
+            </h1>
+            <UserMenu user={currentUser} />
+          </div>
+        </div>
 
         {opponent && currentUser && (
           <>
