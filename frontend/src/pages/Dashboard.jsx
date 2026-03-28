@@ -43,7 +43,6 @@ export default function Dashboard() {
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
         <div className="glass-card p-6 rounded-2xl">
           <h2 className="text-xl mb-2">Status</h2>
           <p>{status}</p>
@@ -58,7 +57,12 @@ export default function Dashboard() {
           <h2 className="text-xl mb-2">ELO</h2>
           <p className="text-3xl text-pink-400">{elo}</p>
         </div>
-
+          <button
+              onClick={() => window.location.href = "/matchmaking"}
+              className="mt-6 px-6 py-3 bg-purple-500 rounded-xl"
+            >
+              Go Matchmaking
+            </button>
       </div>
     </div>
   );

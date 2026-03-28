@@ -5,13 +5,14 @@ from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.queue import QueuePlayer
 from app.models.match import Match
+from app.core.ws_manager import manager
 
 router = APIRouter()
 
 
 # JOIN QUEUE
 @router.post("/join")
-def join_queue(
+async def join_queue(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -25,12 +26,60 @@ def join_queue(
         return {"message": "Already in queue"}
 
     player = QueuePlayer(user_id=user.id)
-
     db.add(player)
     db.commit()
 
-    return {"message": "Joined queue"}
+    # CHECK MATCH DIRECT
+    players = db.query(QueuePlayer).filter(
+        QueuePlayer.status == "waiting"
+    ).all()
 
+    if len(players) >= 2:
+
+        best_pair = None
+        best_diff = 999999
+
+        for i in range(len(players)):
+            for j in range(i + 1, len(players)):
+
+                u1 = db.query(User).get(players[i].user_id)
+                u2 = db.query(User).get(players[j].user_id)
+
+                diff = abs(u1.elo - u2.elo)
+
+                if diff < best_diff:
+                    best_diff = diff
+                    best_pair = (players[i], players[j])
+
+        if best_pair:
+            p1, p2 = best_pair
+
+            match = Match(
+                player1_id=p1.user_id,
+                player2_id=p2.user_id
+            )
+
+            db.add(match)
+
+            p1.status = "matched"
+            p2.status = "matched"
+
+            db.commit()
+
+            #  ENVOI WS AUX 2 USERS
+            await manager.send_to_user(p1.user_id, {
+                "type": "match_found",
+                "opponent": p2.user_id
+            })
+
+            await manager.send_to_user(p2.user_id, {
+                "type": "match_found",
+                "opponent": p1.user_id
+            })
+
+            return {"message": "Match auto created"}
+
+    return {"message": "Joined queue"}
 
 # LEAVE QUEUE
 @router.post("/leave")
