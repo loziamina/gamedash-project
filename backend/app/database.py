@@ -1,36 +1,46 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
 import os
-from dotenv import load_dotenv
 
-# Charger les variables .env
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import declarative_base, sessionmaker
+
 load_dotenv()
 
-# Récupérer DATABASE_URL depuis .env
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Debug (à enlever après)
 print("DB URL =", DATABASE_URL)
 
-# Création engine (avec encodage UTF-8 pour éviter ton erreur)
 engine = create_engine(
     DATABASE_URL,
-    echo=True,  # optionnel (logs SQL)
+    echo=True,
     pool_pre_ping=True,
-    connect_args={"options": "-c client_encoding=utf8"}
+    connect_args={"options": "-c client_encoding=utf8"},
 )
 
-# Session DB
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine
+    bind=engine,
 )
 
-# Base pour les modèles
 Base = declarative_base()
 
-# Dépendance FastAPI
+
+def ensure_schema():
+    inspector = inspect(engine)
+
+    if "users" not in inspector.get_table_names():
+        return
+
+    user_columns = {column["name"] for column in inspector.get_columns("users")}
+
+    if "is_active" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE")
+            )
+
+
 def get_db():
     db = SessionLocal()
     try:
