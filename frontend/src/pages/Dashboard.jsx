@@ -63,6 +63,12 @@ export default function Dashboard() {
             >
               Go Matchmaking
             </button>
+          <button
+              onClick={() => window.location.href = "/history"}
+              className="mt-4 px-6 py-3 bg-cyan-500 rounded-xl"
+            >
+              Voir historique
+            </button>
       </div>
     </div>
   );
