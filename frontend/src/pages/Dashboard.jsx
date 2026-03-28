@@ -6,11 +6,16 @@ export default function Dashboard() {
   const [status, setStatus] = useState("Connexion...");
   const [players, setPlayers] = useState(0);
   const [elo, setElo] = useState(0);
+  const [rank, setRank] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     getMe()
-      .then(setCurrentUser)
+      .then((data) => {
+        setCurrentUser(data);
+        setElo(data.elo ?? 0);
+        setRank(data.rank ?? "");
+      })
       .catch((error) => console.error("Unable to load current user", error));
 
     const token = localStorage.getItem("token");
@@ -32,6 +37,7 @@ export default function Dashboard() {
 
       if (data.type === "elo") {
         setElo(data.elo);
+        setRank(data.rank ?? "");
       }
     };
 
@@ -42,6 +48,23 @@ export default function Dashboard() {
     return () => ws.close();
   }, []);
 
+  const getRankColor = (currentRank) => {
+    switch (currentRank) {
+      case "Bronze":
+        return "text-orange-400";
+      case "Silver":
+        return "text-gray-300";
+      case "Gold":
+        return "text-yellow-400";
+      case "Platinum":
+        return "text-cyan-400";
+      case "Diamond":
+        return "text-purple-400";
+      default:
+        return "text-white";
+    }
+  };
+
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
@@ -49,7 +72,7 @@ export default function Dashboard() {
           GameDash Dashboard
         </h1>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
           <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20">
             <h2 className="mb-2 text-xl">Status</h2>
             <p>{status}</p>
@@ -63,6 +86,13 @@ export default function Dashboard() {
           <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-pink-500/20">
             <h2 className="mb-2 text-xl">ELO</h2>
             <p className="text-3xl text-pink-400">{elo}</p>
+          </div>
+
+          <div className="dashboard-card rounded-2xl p-6 text-center transition-all duration-200 hover:shadow-2xl hover:shadow-yellow-500/20">
+            <h2 className="mb-2 text-xl">Rank</h2>
+            <p className={`text-4xl font-bold animate-pulse ${getRankColor(rank)}`}>
+              {rank || "Unranked"}
+            </p>
           </div>
         </div>
 
