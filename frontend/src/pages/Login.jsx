@@ -6,7 +6,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [particles, setParticles] = useState([]);
-
+  
   // Générateur particules 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,20 +29,34 @@ export default function Login() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const data = await login(email, password);
+  try {
+    const data = await login(email, password);
+
+    // sauvegarde token (important pour WS + API)
+    if (data?.access_token) {
       localStorage.setItem("token", data.access_token);
-      window.location.href = "/dashboard";
-    } catch (err) {
-      alert("Erreur login: " + (err.response?.data?.message || "Vérifiez vos identifiants"));
-      setIsLoading(false);
+    } else {
+      throw new Error("Token non reçu");
     }
-  };
 
+    // redirection propre
+    window.location.href = "/dashboard";
+
+  } catch (err) {
+    console.error(err);
+
+    alert(
+      "Erreur login: " +
+      (err.response?.data?.detail || "Vérifiez vos identifiants")
+    );
+
+    setIsLoading(false);
+  }
+};
   return (
     <>
       {/* GRID BG ANIMÉ */}

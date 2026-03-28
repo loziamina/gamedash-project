@@ -1,82 +1,62 @@
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from sqlalchemy.orm import Session
+from jose import jwt, JWTError
+
 from app.database import SessionLocal
 from app.models.user import User
-from app.models.match import Match
+from app.config import SECRET_KEY
 
 router = APIRouter()
 
-# joueurs en attente
-waiting_players = []
+# connexions actives
+active_connections = []
 
 
 @router.websocket("/ws/matchmaking")
-async def websocket_matchmaking(websocket: WebSocket):
+async def matchmaking_ws(websocket: WebSocket):
     await websocket.accept()
 
-    db: Session = SessionLocal()
+    #  récupérer token depuis URL
+    token = websocket.query_params.get("token")
+
+    if not token:
+        await websocket.close()
+        return
 
     try:
-        # recevoir user_id depuis frontend
-        user_id = int(await websocket.receive_text())
+        #  decode JWT
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        email = payload.get("sub")
 
-        user = db.query(User).get(user_id)
+        db = SessionLocal()
+        user = db.query(User).filter(User.email == email).first()
 
         if not user:
             await websocket.close()
             return
 
-        # chercher un joueur proche en ELO
-        matched_player = None
+    except JWTError:
+        await websocket.close()
+        return
 
-        for player in waiting_players:
-            other_user = player["user"]
+    #  ajouter utilisateur connecté
+    active_connections.append(websocket)
 
-            if abs(other_user.elo - user.elo) <= 100:
-                matched_player = player
-                break
-
-        # MATCH TROUVÉ
-        if matched_player:
-            waiting_players.remove(matched_player)
-
-            # 🎮 créer match en DB
-            match = Match(
-                player1_id=user.id,
-                player2_id=matched_player["user"].id,
-                status="ongoing"
-            )
-
-            db.add(match)
-            db.commit()
-            db.refresh(match)
-
-            match_data = {
-                "type": "match_found",
-                "match_id": match.id,
-                "players": [user.id, matched_player["user"].id]
-            }
-
-            # envoyer aux 2 joueurs
-            await websocket.send_json(match_data)
-            await matched_player["ws"].send_json(match_data)
-
-        else:
-            # ajouter à la queue
-            waiting_players.append({
-                "ws": websocket,
-                "user": user
+    try:
+        while True:
+            #  nombre réel de joueurs connectés
+            await websocket.send_json({
+                "type": "stats",
+                "players": len(active_connections)
             })
 
-        # boucle écoute
-        while True:
-            await websocket.receive_text()
+            #  elo réel user
+            await websocket.send_json({
+                "type": "elo",
+                "elo": user.elo
+            })
+
+            await asyncio.sleep(2)
 
     except WebSocketDisconnect:
-        # retirer joueur si déconnecté
-        waiting_players[:] = [
-            p for p in waiting_players if p["ws"] != websocket
-        ]
-
-    finally:
-        db.close()
+        active_connections.remove(websocket)
