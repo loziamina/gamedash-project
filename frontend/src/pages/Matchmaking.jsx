@@ -13,15 +13,17 @@ export default function Matchmaking() {
     );
 
     ws.onopen = () => {
-      console.log("WS connecté");
+      console.log("WS connecte");
     };
 
     ws.onmessage = (event) => {
+      console.log("WS DATA:", event.data);
+
       const data = JSON.parse(event.data);
 
       if (data.type === "match_found") {
-        setMatch(data);
-        setStatus("🎮 MATCH TROUVÉ !");
+        localStorage.setItem("match", JSON.stringify(data));
+        window.location.href = "/game";
       }
     };
 
@@ -39,39 +41,33 @@ export default function Matchmaking() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
+    <div className="min-h-screen bg-black p-6 text-white">
+      <h1 className="mb-8 text-4xl text-cyan-400">Matchmaking</h1>
 
-      <h1 className="text-4xl text-cyan-400 mb-8">
-        🎯 Matchmaking
-      </h1>
-
-      <div className="flex gap-4 mb-6">
-
+      <div className="mb-6 flex gap-4">
         <button
           onClick={handleJoin}
-          className="px-6 py-3 bg-cyan-500 rounded-xl"
+          className="rounded-xl bg-cyan-500 px-6 py-3"
         >
           Join Queue
         </button>
 
         <button
           onClick={handleLeave}
-          className="px-6 py-3 bg-red-500 rounded-xl"
+          className="rounded-xl bg-red-500 px-6 py-3"
         >
           Leave Queue
         </button>
-
       </div>
 
       <p>Status: {status}</p>
 
       {match && (
-        <div className="mt-6 p-6 bg-white/5 border border-cyan-500/30 rounded-xl">
-          <h2 className="text-2xl mb-2">🎮 Match trouvé</h2>
+        <div className="mt-6 rounded-xl border border-cyan-500/30 bg-white/5 p-6">
+          <h2 className="mb-2 text-2xl">Match trouve</h2>
           <p>Opponent: {match.opponent}</p>
         </div>
       )}
-
     </div>
   );
 }
