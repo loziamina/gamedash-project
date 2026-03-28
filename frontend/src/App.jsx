@@ -5,6 +5,7 @@ import Matchmaking from "./pages/Matchmaking";
 import Game from "./pages/Game";
 import History from "./pages/History";
 import EloGraph from "./pages/EloGraph";
+import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
@@ -17,6 +18,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/matchmaking" element={<Matchmaking />} />
         <Route path="/game" element={<Game />} />
         <Route path="/history" element={<History />} />
