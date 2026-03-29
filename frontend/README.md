@@ -141,6 +141,6 @@ ou
 
 ## Liens utiles
 
-- README racine : [README.md](/c:/Public/dev/gamedash-project/README.md)
-- Backend : [backend/README.md](/c:/Public/dev/gamedash-project/backend/README.md)
-- Documentation : [docs](/c:/Public/dev/gamedash-project/docs)
+- README racine : [README.md](https://github.com/loziamina/gamedash-project/blob/main/README.md)
+- Backend : [backend/README.md](https://github.com/loziamina/gamedash-project/blob/main/backend/README.md)
+- Documentation : [docs](https://github.com/loziamina/gamedash-project/blob/main/docs)
