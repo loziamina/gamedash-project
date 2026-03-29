@@ -5,6 +5,8 @@ import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import {
+  createMatch,
+  getCurrentMatch,
   getMatchmakingOverview,
   getMatchmakingSettings,
   joinQueue,
@@ -38,16 +40,30 @@ export default function Matchmaking() {
   const [settings, setSettings] = useState(null);
   const [overview, setOverview] = useState(null);
 
+  const redirectToGame = (matchPayload) => {
+    setMatch(matchPayload);
+    localStorage.setItem("match", JSON.stringify(matchPayload));
+    window.location.href = "/game";
+  };
+
   const refreshData = async () => {
     try {
-      const [me, settingsData, overviewData] = await Promise.all([
+      const [me, settingsData, overviewData, currentMatchData] = await Promise.all([
         getMe(),
         getMatchmakingSettings(),
         getMatchmakingOverview(),
+        getCurrentMatch(),
       ]);
       setCurrentUser(me);
       setSettings(settingsData.settings);
       setOverview(overviewData);
+
+      if (currentMatchData?.match) {
+        setStatus("Match en cours");
+        redirectToGame(currentMatchData.match);
+        return;
+      }
+
       setStatus(
         me.player_status === "queue"
           ? "En file d'attente"
@@ -71,10 +87,8 @@ export default function Matchmaking() {
       const data = JSON.parse(event.data);
 
       if (data.type === "match_found") {
-        setMatch(data);
-        localStorage.setItem("match", JSON.stringify(data));
         toast.success(`Match trouve en mode ${data.mode || "ranked"} !`);
-        window.location.href = "/game";
+        redirectToGame(data);
       }
 
       if (data.type === "player_state") {
@@ -85,10 +99,56 @@ export default function Matchmaking() {
     return () => ws.close();
   }, []);
 
+  useEffect(() => {
+    if (currentUser?.player_status !== "queue") {
+      return undefined;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await createMatch(selectedMode);
+
+        if (res?.match_id) {
+          const matchPayload = {
+            match_id: res.match_id,
+            opponent:
+              currentUser?.id === res.players?.[0] ? res.players?.[1] : res.players?.[0],
+            mode: res.mode || selectedMode,
+            status: "in_game",
+          };
+
+          toast.success(`Match trouve en mode ${res.mode || selectedMode} !`);
+          redirectToGame(matchPayload);
+        } else {
+          await refreshData();
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [currentUser?.player_status, currentUser?.id, selectedMode]);
+
   const handleJoin = async () => {
     try {
       setLoading(true);
       const res = await joinQueue(selectedMode);
+
+      if (res.match_id) {
+        const matchPayload = {
+          match_id: res.match_id,
+          opponent:
+            currentUser?.id === res.players?.[0] ? res.players?.[1] : res.players?.[0],
+          mode: res.mode || selectedMode,
+          status: "in_game",
+        };
+
+        toast.success(`Match trouve en mode ${res.mode || selectedMode} !`);
+        redirectToGame(matchPayload);
+        return;
+      }
+
       setStatus(res.message);
       setCurrentUser((prev) =>
         prev ? { ...prev, player_status: res.player_status || "queue" } : prev

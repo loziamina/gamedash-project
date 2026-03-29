@@ -291,6 +291,34 @@ def queue_overview(user: User = Depends(get_current_user), db: Session = Depends
     }
 
 
+@router.get("/current")
+def get_current_match(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    match = (
+        db.query(Match)
+        .filter(
+            or_(Match.player1_id == user.id, Match.player2_id == user.id),
+            Match.status == "ongoing",
+        )
+        .order_by(Match.created_at.desc())
+        .first()
+    )
+
+    if not match:
+        return {"match": None}
+
+    opponent_id = match.player2_id if match.player1_id == user.id else match.player1_id
+
+    return {
+        "match": {
+            "match_id": match.id,
+            "opponent": opponent_id,
+            "mode": match.mode,
+            "status": "in_game",
+            "created_at": match.created_at,
+        }
+    }
+
+
 @router.get("/history")
 def get_history(
     mode: str | None = Query(default=None),
@@ -514,7 +542,7 @@ def match_result(match_id: int, winner_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/finish")
-def finish_match(match_id: int, winner_id: int, db: Session = Depends(get_db)):
+async def finish_match(match_id: int, winner_id: int, db: Session = Depends(get_db)):
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         return {"message": "Match not found"}
@@ -538,6 +566,29 @@ def finish_match(match_id: int, winner_id: int, db: Session = Depends(get_db)):
         db.delete(queue_entry)
 
     db.commit()
+
+    await manager.send_to_user(
+        match.player1_id,
+        {
+            "type": "match_finished",
+            "match_id": match.id,
+            "winner_id": winner_id,
+            "result": "win" if winner_id == match.player1_id else "lose",
+            "mode": match.mode,
+            "duration_seconds": match.duration_seconds,
+        },
+    )
+    await manager.send_to_user(
+        match.player2_id,
+        {
+            "type": "match_finished",
+            "match_id": match.id,
+            "winner_id": winner_id,
+            "result": "win" if winner_id == match.player2_id else "lose",
+            "mode": match.mode,
+            "duration_seconds": match.duration_seconds,
+        },
+    )
 
     return {
         "message": "Match finished",

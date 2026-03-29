@@ -86,3 +86,19 @@ export const getMatchmakingOverview = async () => {
 
   return res.json();
 };
+
+export const getCurrentMatch = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/matchmaking/current`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch current match");
+  }
+
+  return res.json();
+};

@@ -5,6 +5,7 @@ import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import { finishMatch } from "../services/game";
+import { getCurrentMatch } from "../services/matchmaking";
 
 export default function Game() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -21,11 +22,14 @@ export default function Game() {
         setCurrentUser(me);
 
         const matchData = localStorage.getItem("match");
+        const parsedLocalMatch = matchData ? JSON.parse(matchData) : null;
+        const currentMatchData = await getCurrentMatch();
+        const data = parsedLocalMatch || currentMatchData?.match;
 
-        if (matchData) {
-          const data = JSON.parse(matchData);
+        if (data) {
           setMatchId(data.match_id ?? null);
           setOpponent(data.opponent ?? null);
+          localStorage.setItem("match", JSON.stringify(data));
           setStatus("Combat en cours");
         } else {
           setStatus("Aucun match");
@@ -39,6 +43,33 @@ export default function Game() {
     loadGameData();
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token || !currentUser || !matchId) {
+      return undefined;
+    }
+
+    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/matchmaking?token=${token}`);
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "match_finished" && data.match_id === matchId) {
+        setWinner(data.result === "win" ? "YOU" : "OPPONENT");
+        setStatus(data.result === "win" ? "Victoire confirmee" : "Defaite confirmee");
+        setIsSubmitting(false);
+        localStorage.removeItem("match");
+
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 2000);
+      }
+    };
+
+    return () => ws.close();
+  }, [currentUser, matchId]);
+
   const handleFinish = async (winnerId, winnerLabel) => {
     if (!matchId || !winnerId) {
       toast.error("Match introuvable.");
@@ -49,11 +80,6 @@ export default function Game() {
       setIsSubmitting(true);
       setWinner(winnerLabel);
       await finishMatch(matchId, winnerId);
-      localStorage.removeItem("match");
-
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 2000);
     } catch (error) {
       console.error(error);
       toast.error("Impossible de terminer le match.");
