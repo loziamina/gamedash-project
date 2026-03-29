@@ -1,8 +1,146 @@
-# React + Vite
+# Frontend GameDash
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Le frontend GameDash est une application React/Vite orientee experience joueur et backoffice web gaming.
 
-Currently, two official plugins are available:
+Il couvre :
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- authentification et onboarding
+- dashboard joueur
+- matchmaking et game flow
+- historique et progression competitive
+- hub communautaire maps
+- panel admin
+- gestion des sanctions
+- boutique
+
+## Lancer le frontend
+
+Depuis le dossier `frontend` :
+
+```bash
+npm install
+npm run dev
+```
+
+Build de production :
+
+```bash
+npm run build
+```
+
+Serveur de dev par defaut :
+
+```text
+http://localhost:5173
+```
+
+## Architecture du dossier
+
+```text
+frontend/
+|-- src/
+|   |-- components/
+|   |-- pages/
+|   |-- services/
+|   |-- App.jsx
+|   |-- index.css
+|   `-- main.jsx
+|-- package.json
+`-- README.md
+```
+
+## Organisation des dossiers
+
+### `src/components`
+
+Composants UI reutilisables.
+
+- `BackToDashboardButton.jsx` : bouton commun de navigation retour dashboard
+- `PageWrapper.jsx` : wrapper anime pour les transitions de pages
+- `UserMenu.jsx` : menu utilisateur avec avatar, acces profil et deconnexion
+
+### `src/pages`
+
+Pages principales de l'application.
+
+- `Login.jsx` : connexion email/password + entree Google
+- `Register.jsx` : inscription
+- `ForgotPassword.jsx` : demande de reinitialisation du mot de passe
+- `ResetPassword.jsx` : page de redefintion du mot de passe
+- `OAuthSuccess.jsx` : callback frontend apres login Google
+- `Profile.jsx` : edition complete du profil joueur
+- `Dashboard.jsx` : vue principale joueur avec statistiques, niveau, quetes et leaderboard
+- `Matchmaking.jsx` : choix du mode de jeu, etat joueur, monitoring files
+- `Game.jsx` : ecran de session de match et fin de partie
+- `History.jsx` : historique des matchs avec filtres et details
+- `EloGraph.jsx` : progression MMR / ELO par mode
+- `Maps.jsx` : hub communautaire des maps et creator studio
+- `Admin.jsx` : backoffice studio
+
+### `src/services`
+
+Couche d'acces API.
+
+- `api.js` : auth, profil, compte
+- `matchmaking.js` : file d'attente, overview matchmaking, settings joueur
+- `game.js` : fin de match
+- `match.js` : historique des matchs
+- `elo.js` : historique ELO / MMR
+- `dashboard.js` : leaderboard, summary, winrate, quests
+- `maps.js` : maps, versions, votes, favoris, tests, signalements
+- `admin.js` : backoffice, moderation, sanctions, reward settings, rank settings
+
+## Fichiers racine importants
+
+- `App.jsx` : declaration des routes React
+- `main.jsx` : point d'entree React + toaster global
+- `index.css` : styles globaux, ambiance et classes partagees
+
+## Choix frontend
+
+- React + Vite pour la rapidite de developpement
+- Tailwind CSS pour le styling utilitaire
+- Framer Motion pour les transitions
+- Recharts pour les dashboards et KPIs
+- React Hot Toast pour les feedbacks utilisateur
+
+## Flux utilisateur principaux
+
+### Auth
+
+`Login` -> `Dashboard`
+
+ou
+
+`Google OAuth` -> `OAuthSuccess` -> `Dashboard`
+
+### Matchmaking
+
+`Dashboard` -> `Matchmaking` -> `Game` -> `History` / `Dashboard`
+
+### UGC maps
+
+`Dashboard` -> `Maps`
+
+### Backoffice
+
+`Dashboard` -> `Admin`
+
+## Bonnes pratiques dans ce frontend
+
+- separation claire entre pages et services
+- composants reutilisables pour la navigation et la structure
+- feedback utilisateur avec toasts
+- navigation unifiee avec retour dashboard
+- UI gaming coherente sur les pages connectees
+
+## Points d'attention
+
+- certaines grosses pages utilisent beaucoup de composants et de charts, donc le bundle reste assez lourd
+- les uploads de captures/avatar/maps sont actuellement geres en `data URL`, pratique pour le MVP mais pas ideal pour une prod a grande echelle
+
+## Liens utiles
+
+- README racine : [README.md](/c:/Public/dev/gamedash-project/README.md)
+- Backend : [backend/README.md](/c:/Public/dev/gamedash-project/backend/README.md)
+- Documentation : [docs](/c:/Public/dev/gamedash-project/docs)
