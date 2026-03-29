@@ -9,6 +9,10 @@ Le projet permet :
 - de suivre leur MMR, leur rang, leur niveau et leur historique
 - d'explorer et publier des maps communautaires
 - au studio de piloter un backoffice admin avec analytics, moderation et configuration live
+- UX mobile first et notifications in-app
+- mise en avant des maps et createurs
+- saisons competitives et recompenses createurs
+- boutique / economie virtuelle / inventaire
 
 ## Equipe projet
 
@@ -19,6 +23,8 @@ Projet realise par :
 - Anas MAHHO
 
 ## Fonctionnalites principales
+
+Bloc fonctionnel porte par Amina:
 
 - authentification email / mot de passe
 - login Google OAuth
@@ -32,6 +38,33 @@ Projet realise par :
 - dashboard joueur avec analytics competitives
 - admin panel avec monitoring, sanctions, reglages MMR/rangs/recompenses
 - module maps / UGC avec versions, votes, favoris, commentaires, tests, signalements
+
+## Axes complementaires du cahier des charges
+
+### Produit / UX
+
+Bloc fonctionnel porte par Anas :
+
+- parcours mobile first plus pousse
+- mise en avant des maps et createurs
+- notifications in-app
+- saisons competitives
+- saisons / recompenses createurs
+
+### Boutique / Economie
+
+Bloc fonctionnel porte par Mariya:
+
+- soft currency
+- hard currency
+- boutique
+- packs
+- pass de saison
+- inventaire
+- equiper des objets
+- journal des transactions
+- paiement simule Stripe / PayPal
+- reglages economie cote admin
 
 ## Stack technique
 
