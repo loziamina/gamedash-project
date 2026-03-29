@@ -90,6 +90,10 @@ export async function resetPassword(token, password) {
 export async function getMe() {
   const token = localStorage.getItem("token");
 
+  if (!token) {
+    throw new Error("No active session");
+  }
+
   const response = await fetch(`${API_URL}/auth/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -97,6 +101,10 @@ export async function getMe() {
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("match");
+    }
     throw new Error("Unable to fetch current user");
   }
 

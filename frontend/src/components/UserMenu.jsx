@@ -1,12 +1,27 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getMapNotifications } from "../services/maps";
 
 export default function UserMenu({ user }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const initials = useMemo(() => {
     const source = user?.pseudo || user?.email || "GD";
     return source.slice(0, 2).toUpperCase();
   }, [user]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setUnreadCount(0);
+      return;
+    }
+
+    getMapNotifications()
+      .then((data) => setUnreadCount(data.unread_count || 0))
+      .catch(() => setUnreadCount(0));
+  }, [user?.id]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -39,10 +54,15 @@ export default function UserMenu({ user }) {
             {user?.email || "Compte"}
           </p>
         </div>
+        {unreadCount > 0 && (
+          <div className="flex h-7 min-w-7 items-center justify-center rounded-full bg-pink-500 px-2 text-xs font-bold text-white">
+            {unreadCount}
+          </div>
+        )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-3 w-56 rounded-2xl border border-cyan-500/20 bg-slate-950/95 p-2 shadow-2xl shadow-cyan-500/10 backdrop-blur-xl">
+        <div className="absolute right-0 z-50 mt-3 w-64 rounded-2xl border border-cyan-500/20 bg-slate-950/95 p-2 shadow-2xl shadow-cyan-500/10 backdrop-blur-xl">
           <button
             onClick={() => {
               window.location.href = "/profile";
@@ -50,6 +70,19 @@ export default function UserMenu({ user }) {
             className="w-full rounded-xl px-4 py-3 text-left text-sm text-white transition hover:bg-white/10"
           >
             Voir profil
+          </button>
+          <button
+            onClick={() => {
+              window.location.href = "/my-maps";
+            }}
+            className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm text-white transition hover:bg-white/10"
+          >
+            <span>Mes maps</span>
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-pink-500 px-2 py-1 text-xs font-bold text-white">
+                {unreadCount}
+              </span>
+            )}
           </button>
           <button
             onClick={handleLogout}

@@ -10,6 +10,7 @@ from app.models import (  # noqa: F401
     map_playtest,
     map_report,
     map_tag,
+    notification,
     reward_settings,
     sanction_log,
     virtual_transaction,

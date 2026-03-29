@@ -21,6 +21,52 @@ export const getMaps = async (params = {}) => {
   return res.json();
 };
 
+export const getMyMaps = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/maps/mine`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch my maps");
+  }
+
+  return res.json();
+};
+
+export const getMapNotifications = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/maps/notifications`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch notifications");
+  }
+
+  return res.json();
+};
+
+export const readAllMapNotifications = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/maps/notifications/read-all`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to mark notifications as read");
+  }
+
+  return res.json();
+};
+
 export const getCreatorStats = async () => {
   const res = await fetch(`${API}/maps/creator-stats`);
   if (!res.ok) {
@@ -157,6 +203,23 @@ export const reportMap = async (id, reason) => {
 
   if (!res.ok) {
     throw new Error("Unable to report map");
+  }
+
+  return res.json();
+};
+
+export const deleteMapComment = async (commentId) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/maps/comment/${commentId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to delete comment");
   }
 
   return res.json();
