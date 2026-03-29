@@ -24,6 +24,22 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
+def serialize_user_profile(user: User):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "pseudo": user.pseudo,
+        "avatar_url": user.avatar_url,
+        "bio": user.bio,
+        "region": user.region,
+        "language": user.language,
+        "matchmaking_preferences": user.matchmaking_preferences,
+        "role": user.role,
+        "elo": user.elo,
+        "rank": get_rank(user.elo),
+    }
+
+
 @router.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
@@ -151,12 +167,16 @@ async def google_callback(request: Request):
             user = User(
                 email=user_info["email"],
                 pseudo=user_info.get("name", "google_user"),
+                avatar_url=user_info.get("picture"),
                 password="",
                 role="player",
             )
             db.add(user)
             db.commit()
             db.refresh(user)
+        elif not user.avatar_url and user_info.get("picture"):
+            user.avatar_url = user_info.get("picture")
+            db.commit()
 
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Account is disabled")
@@ -170,14 +190,7 @@ async def google_callback(request: Request):
 
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
-    return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "pseudo": current_user.pseudo,
-        "role": current_user.role,
-        "elo": current_user.elo,
-        "rank": get_rank(current_user.elo),
-    }
+    return serialize_user_profile(current_user)
 
 
 def require_admin(current_user: User = Depends(get_current_user)):

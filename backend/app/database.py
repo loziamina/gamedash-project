@@ -34,11 +34,19 @@ def ensure_schema():
 
     user_columns = {column["name"] for column in inspector.get_columns("users")}
 
-    if "is_active" not in user_columns:
-        with engine.begin() as connection:
-            connection.execute(
-                text("ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE")
-            )
+    alter_statements = {
+        "is_active": "ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE",
+        "avatar_url": "ALTER TABLE users ADD COLUMN avatar_url TEXT",
+        "bio": "ALTER TABLE users ADD COLUMN bio TEXT",
+        "region": "ALTER TABLE users ADD COLUMN region VARCHAR",
+        "language": "ALTER TABLE users ADD COLUMN language VARCHAR",
+        "matchmaking_preferences": "ALTER TABLE users ADD COLUMN matchmaking_preferences TEXT",
+    }
+
+    with engine.begin() as connection:
+        for column_name, statement in alter_statements.items():
+            if column_name not in user_columns:
+                connection.execute(text(statement))
 
 
 def get_db():
