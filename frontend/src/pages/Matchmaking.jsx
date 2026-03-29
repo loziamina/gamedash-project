@@ -4,37 +4,81 @@ import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
-import { joinQueue, leaveQueue } from "../services/matchmaking";
+import {
+  getMatchmakingOverview,
+  getMatchmakingSettings,
+  joinQueue,
+  leaveQueue,
+} from "../services/matchmaking";
+
+const MODES = [
+  {
+    value: "ranked",
+    label: "Classe",
+    description: "MMR actif, matchmaking competitif et impact ELO complet.",
+  },
+  {
+    value: "unranked",
+    label: "Non classe",
+    description: "Entrainement propre avec files dediees et pression reduite.",
+  },
+  {
+    value: "fun",
+    label: "Fun",
+    description: "Parties rapides et plus permissives pour jouer sans pression.",
+  },
+];
 
 export default function Matchmaking() {
   const [status, setStatus] = useState("Idle");
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [selectedMode, setSelectedMode] = useState("ranked");
+  const [settings, setSettings] = useState(null);
+  const [overview, setOverview] = useState(null);
+
+  const refreshData = async () => {
+    try {
+      const [me, settingsData, overviewData] = await Promise.all([
+        getMe(),
+        getMatchmakingSettings(),
+        getMatchmakingOverview(),
+      ]);
+      setCurrentUser(me);
+      setSettings(settingsData.settings);
+      setOverview(overviewData);
+      setStatus(
+        me.player_status === "queue"
+          ? "En file d'attente"
+          : me.player_status === "in_game"
+            ? "Match en cours"
+            : "Pret a lancer une recherche"
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de charger le matchmaking.");
+    }
+  };
 
   useEffect(() => {
-    getMe().then(setCurrentUser).catch((error) => console.error(error));
+    refreshData();
 
     const token = localStorage.getItem("token");
-
-    const ws = new WebSocket(
-      `ws://127.0.0.1:8000/ws/matchmaking?token=${token}`
-    );
-
-    ws.onopen = () => {
-      console.log("WS connecte");
-    };
+    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/matchmaking?token=${token}`);
 
     ws.onmessage = (event) => {
-      console.log("WS DATA:", event.data);
-
       const data = JSON.parse(event.data);
 
       if (data.type === "match_found") {
         setMatch(data);
         localStorage.setItem("match", JSON.stringify(data));
-        toast.success("Match trouve !");
+        toast.success(`Match trouve en mode ${data.mode || "ranked"} !`);
         window.location.href = "/game";
+      }
+
+      if (data.type === "player_state") {
+        setCurrentUser((prev) => (prev ? { ...prev, player_status: data.player_status } : prev));
       }
     };
 
@@ -44,9 +88,13 @@ export default function Matchmaking() {
   const handleJoin = async () => {
     try {
       setLoading(true);
-      const res = await joinQueue();
+      const res = await joinQueue(selectedMode);
       setStatus(res.message);
+      setCurrentUser((prev) =>
+        prev ? { ...prev, player_status: res.player_status || "queue" } : prev
+      );
       toast.success(res.message || "Recherche lancee");
+      await refreshData();
     } catch (error) {
       console.error(error);
       toast.error("Impossible de rejoindre la file");
@@ -59,12 +107,23 @@ export default function Matchmaking() {
     try {
       const res = await leaveQueue();
       setStatus(res.message);
+      setCurrentUser((prev) =>
+        prev ? { ...prev, player_status: res.player_status || "online" } : prev
+      );
       toast.success(res.message || "File quittee");
+      await refreshData();
     } catch (error) {
       console.error(error);
       toast.error("Impossible de quitter la file");
     }
   };
+
+  const selectedModeEnabled =
+    selectedMode === "ranked"
+      ? settings?.modes?.ranked
+      : selectedMode === "unranked"
+        ? settings?.modes?.unranked
+        : settings?.modes?.fun;
 
   return (
     <PageWrapper>
@@ -74,37 +133,172 @@ export default function Matchmaking() {
             <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
               Matchmaking
             </h1>
+            <p className="mt-2 max-w-3xl text-slate-400">
+              Choisis une file, surveille l'etat des joueurs et lance une recherche
+              qui prend en compte l'ELO, le mode et le temps d'attente maximum.
+            </p>
             <BackToDashboardButton className="mt-4" />
           </div>
           <UserMenu user={currentUser} />
         </div>
 
-        <div className="mb-6 flex gap-4">
-          <button
-            onClick={handleJoin}
-            disabled={loading}
-            className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Recherche..." : "Join Queue"}
-          </button>
+        <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="dashboard-card rounded-3xl p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
+                  Modes
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-white">
+                  Plusieurs files de jeu
+                </h2>
+              </div>
+              <div className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-200">
+                Etat joueur: {currentUser?.player_status || "online"}
+              </div>
+            </div>
 
-          <button
-            onClick={handleLeave}
-            className="rounded-xl bg-red-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-red-500/20 active:scale-95"
-          >
-            Leave Queue
-          </button>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {MODES.map((mode) => {
+                const enabled =
+                  mode.value === "ranked"
+                    ? settings?.modes?.ranked
+                    : mode.value === "unranked"
+                      ? settings?.modes?.unranked
+                      : settings?.modes?.fun;
+
+                return (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    onClick={() => setSelectedMode(mode.value)}
+                    className={`rounded-3xl border p-5 text-left transition-all duration-200 ${
+                      selectedMode === mode.value
+                        ? "border-cyan-400 bg-cyan-500/10 shadow-xl shadow-cyan-500/20"
+                        : "border-white/10 bg-white/5 hover:border-cyan-400/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-xl font-bold text-white">{mode.label}</h3>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] ${
+                          enabled
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "bg-red-500/20 text-red-300"
+                        }`}
+                      >
+                        {enabled ? "Actif" : "Off"}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm text-slate-400">{mode.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-4">
+              <button
+                onClick={handleJoin}
+                disabled={loading || !selectedModeEnabled}
+                className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Recherche..." : `Rejoindre ${selectedMode}`}
+              </button>
+
+              <button
+                onClick={handleLeave}
+                className="rounded-xl bg-red-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-red-500/20 active:scale-95"
+              >
+                Quitter la file
+              </button>
+            </div>
+          </div>
+
+          <div className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-pink-300/70">Configuration live</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Parametres actifs</h2>
+
+            <div className="mt-5 grid grid-cols-1 gap-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Statut</p>
+                <p className="mt-2 text-xl text-white">{status}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Ecart ELO max</p>
+                <p className="mt-2 text-xl text-cyan-300">{settings?.max_elo_gap ?? "-"}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Attente max</p>
+                <p className="mt-2 text-xl text-yellow-300">
+                  {settings?.max_wait_seconds ?? "-"} sec
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Taille equipe</p>
+                <p className="mt-2 text-xl text-pink-300">{settings?.team_size ?? "-"}</p>
+              </div>
+            </div>
+
+            {match && (
+              <div className="mt-6 rounded-xl border border-cyan-500/30 bg-white/5 p-6">
+                <h2 className="mb-2 text-2xl text-cyan-300">Match trouve</h2>
+                <p>Opponent: {match.opponent}</p>
+                <p className="mt-2 text-slate-400">Mode: {match.mode}</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="dashboard-card max-w-xl rounded-2xl p-6">
-          <p className="text-lg text-slate-200">Status: {status}</p>
-
-          {match && (
-            <div className="mt-6 rounded-xl border border-cyan-500/30 bg-white/5 p-6">
-              <h2 className="mb-2 text-2xl text-cyan-300">Match trouve</h2>
-              <p>Opponent: {match.opponent}</p>
+        <div className="dashboard-card rounded-3xl p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Monitoring</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">Vue des files en temps reel</h2>
             </div>
-          )}
+            <div className="flex flex-wrap gap-3 text-sm">
+              <span className="rounded-full bg-emerald-500/10 px-4 py-2 text-emerald-300">
+                Online: {overview?.players_by_state?.online ?? 0}
+              </span>
+              <span className="rounded-full bg-yellow-500/10 px-4 py-2 text-yellow-300">
+                Queue: {overview?.players_by_state?.queue ?? 0}
+              </span>
+              <span className="rounded-full bg-pink-500/10 px-4 py-2 text-pink-300">
+                In-game: {overview?.players_by_state?.in_game ?? 0}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {MODES.map((mode) => (
+              <div key={mode.value} className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">{mode.label}</h3>
+                  <span className="text-sm text-slate-400">
+                    {overview?.queue?.[mode.value]?.length ?? 0} en file
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {(overview?.queue?.[mode.value] || []).slice(0, 5).map((entry) => (
+                    <div
+                      key={entry.queue_id}
+                      className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-cyan-200">{entry.pseudo}</p>
+                        <p className="text-xs text-slate-500">{entry.waited_seconds}s</p>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-400">ELO {entry.elo}</p>
+                    </div>
+                  ))}
+
+                  {(overview?.queue?.[mode.value] || []).length === 0 && (
+                    <p className="text-sm text-slate-500">Aucun joueur dans cette file.</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </PageWrapper>
