@@ -110,16 +110,16 @@ Le backend utilise notamment :
 
 ## Documentation
 
-La documentation projet est centralisee dans le dossier [docs](/c:/Public/dev/gamedash-project/docs).
+La documentation projet est centralisee dans le dossier [docs](https://github.com/loziamina/gamedash-project/blob/main/docs).
 
 Document deja present :
 
-- [matchmaking-algorithm.md](/c:/Public/dev/gamedash-project/docs/matchmaking-algorithm.md)
+- [matchmaking-algorithm.md](https://github.com/loziamina/gamedash-project/blob/main/docs/matchmaking-algorithm.md)
 
 ## README par couche
 
-- Frontend : [frontend/README.md](/c:/Public/dev/gamedash-project/frontend/README.md)
-- Backend : [backend/README.md](/c:/Public/dev/gamedash-project/backend/README.md)
+- Frontend : [frontend/README.md](https://github.com/loziamina/gamedash-project/blob/main/frontend/README.md)
+- Backend : [backend/README.md](https://github.com/loziamina/gamedash-project/blob/main/backend/README.md)
 
 ## Demonstration rapide
 
