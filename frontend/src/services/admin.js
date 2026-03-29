@@ -28,6 +28,86 @@ export const getUsers = async () => {
   return res.json();
 };
 
+export const getMatchmakingSettings = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/matchmaking-settings`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch matchmaking settings");
+  }
+
+  return res.json();
+};
+
+export const updateMatchmakingSettings = async (payload) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/matchmaking-settings`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to update matchmaking settings");
+  }
+
+  return res.json();
+};
+
+export const getMatchmakingOverview = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/matchmaking-overview`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch matchmaking overview");
+  }
+
+  return res.json();
+};
+
+export const getRankSettings = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/rank-settings`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch rank settings");
+  }
+
+  return res.json();
+};
+
+export const updateRankSettings = async (payload) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/rank-settings`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to update rank settings");
+  }
+
+  return res.json();
+};
+
 export const banUser = async (id) => {
   const token = localStorage.getItem("token");
 

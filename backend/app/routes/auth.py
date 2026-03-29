@@ -17,7 +17,9 @@ from app.schemas.user import (
     UserCreate,
     UserLogin,
 )
-from app.utils.rank import get_rank
+from app.models.rank_settings import RankSettings
+from app.utils.progression import xp_needed_for_level
+from app.utils.rank import get_rank, get_rank_payload
 
 router = APIRouter()
 
@@ -25,6 +27,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 def serialize_user_profile(user: User):
+    rank_settings = None
+    try:
+        rank_settings = user._sa_instance_state.session.query(RankSettings).first()
+    except Exception:
+        rank_settings = None
+
+    ranked_rank = get_rank_payload(user.ranked_elo or user.elo or 1000, rank_settings)
+    unranked_rank = get_rank_payload(user.unranked_elo or 1000, rank_settings)
+    fun_rank = get_rank_payload(user.fun_elo or 1000, rank_settings)
+
     return {
         "id": user.id,
         "email": user.email,
@@ -34,9 +46,33 @@ def serialize_user_profile(user: User):
         "region": user.region,
         "language": user.language,
         "matchmaking_preferences": user.matchmaking_preferences,
+        "player_status": user.player_status,
         "role": user.role,
         "elo": user.elo,
-        "rank": get_rank(user.elo),
+        "rank": ranked_rank["label"],
+        "rank_tier": ranked_rank["tier"],
+        "rank_division": ranked_rank["division"],
+        "ranked_elo": user.ranked_elo,
+        "unranked_elo": user.unranked_elo,
+        "fun_elo": user.fun_elo,
+        "mmr_by_mode": {
+            "ranked": {
+                "elo": user.ranked_elo,
+                "rank": ranked_rank["label"],
+            },
+            "unranked": {
+                "elo": user.unranked_elo,
+                "rank": unranked_rank["label"],
+            },
+            "fun": {
+                "elo": user.fun_elo,
+                "rank": fun_rank["label"],
+            },
+        },
+        "xp": user.xp,
+        "level": user.level,
+        "soft_currency": user.soft_currency,
+        "xp_needed_for_next_level": xp_needed_for_level(user.level),
     }
 
 
