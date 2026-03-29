@@ -15,6 +15,7 @@ from app.models.map_report import MapReport
 from app.models.map_tag import MapTag
 from app.models.map_version import MapVersion
 from app.models.map_vote import MapVote
+from app.models.notification import Notification
 from app.models.user import User
 
 router = APIRouter(prefix="/maps")
@@ -59,6 +60,30 @@ class MapTestPayload(BaseModel):
 class MapReportPayload(BaseModel):
     map_id: int
     reason: str
+
+
+def _create_notification(
+    db: Session,
+    target_user_id: int,
+    actor_user_id: int | None,
+    map_id: int | None,
+    notification_type: str,
+    title: str,
+    message: str,
+):
+    if actor_user_id and actor_user_id == target_user_id:
+        return
+
+    db.add(
+        Notification(
+            user_id=target_user_id,
+            actor_user_id=actor_user_id,
+            map_id=map_id,
+            type=notification_type,
+            title=title,
+            message=message,
+        )
+    )
 
 
 def _load_screenshots(raw_value: str | None):
@@ -170,6 +195,11 @@ def _serialize_map(game_map: Map, db: Session, current_user: User | None):
             {
                 "id": comment.id,
                 "author_id": comment.user_id,
+                "author_name": (
+                    db.query(User).filter(User.id == comment.user_id).first().pseudo
+                    if db.query(User).filter(User.id == comment.user_id).first()
+                    else f"Player {comment.user_id}"
+                ),
                 "content": comment.content,
                 "created_at": comment.created_at,
             }
@@ -219,6 +249,15 @@ def add_version(payload: AddVersionPayload, user: User = Depends(get_current_use
     if payload.screenshot_urls:
         game_map.screenshot_urls = json.dumps(payload.screenshot_urls[:4])
     game_map.last_updated_at = datetime.utcnow()
+    _create_notification(
+        db,
+        game_map.author_id,
+        user.id,
+        game_map.id,
+        "map_version",
+        "Nouvelle version",
+        f"{user.pseudo} a publie {version} sur {game_map.title}.",
+    )
     db.commit()
 
     return {"message": "Version added", "version": version}
@@ -233,6 +272,17 @@ def vote(payload: VoteMapPayload, user: User = Depends(get_current_user), db: Se
         existing_vote.value = payload.value
     else:
         db.add(MapVote(map_id=payload.map_id, user_id=user.id, value=payload.value))
+    game_map = db.query(Map).filter(Map.id == payload.map_id).first()
+    if game_map:
+        _create_notification(
+            db,
+            game_map.author_id,
+            user.id,
+            game_map.id,
+            "map_vote",
+            "Nouvelle evaluation",
+            f"{user.pseudo} a evalue votre map {game_map.title}.",
+        )
     db.commit()
     return {"message": "Vote added"}
 
@@ -240,12 +290,23 @@ def vote(payload: VoteMapPayload, user: User = Depends(get_current_user), db: Se
 @router.post("/favorite")
 def favorite_map(payload: FavoriteMapPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     favorite = db.query(MapFavorite).filter(MapFavorite.map_id == payload.map_id, MapFavorite.user_id == user.id).first()
+    game_map = db.query(Map).filter(Map.id == payload.map_id).first()
     if favorite:
         db.delete(favorite)
         db.commit()
         return {"message": "Favorite removed", "is_favorited": False}
 
     db.add(MapFavorite(map_id=payload.map_id, user_id=user.id))
+    if game_map:
+        _create_notification(
+            db,
+            game_map.author_id,
+            user.id,
+            game_map.id,
+            "map_favorite",
+            "Nouveau favori",
+            f"{user.pseudo} a ajoute {game_map.title} a ses favoris.",
+        )
     db.commit()
     return {"message": "Favorite added", "is_favorited": True}
 
@@ -256,6 +317,17 @@ def comment_map(payload: CommentMapPayload, user: User = Depends(get_current_use
     if not content:
         raise HTTPException(status_code=400, detail="Comment cannot be empty")
     db.add(MapComment(map_id=payload.map_id, user_id=user.id, content=content))
+    game_map = db.query(Map).filter(Map.id == payload.map_id).first()
+    if game_map:
+        _create_notification(
+            db,
+            game_map.author_id,
+            user.id,
+            game_map.id,
+            "map_comment",
+            "Nouveau commentaire",
+            f"{user.pseudo} a commente votre map {game_map.title}.",
+        )
     db.commit()
     return {"message": "Comment added"}
 
@@ -279,6 +351,15 @@ def mark_test(payload: MapTestPayload, user: User = Depends(get_current_user), d
     game_map.tests_count = len(tests)
     game_map.retention_score = sum(test.completion_rate for test in tests) / len(tests)
     game_map.last_tested_at = datetime.utcnow()
+    _create_notification(
+        db,
+        game_map.author_id,
+        user.id,
+        game_map.id,
+        "map_test",
+        "Nouveau test",
+        f"{user.pseudo} a teste votre map {game_map.title}.",
+    )
     db.commit()
     return {"message": "Map test recorded"}
 
@@ -289,8 +370,84 @@ def report_map(payload: MapReportPayload, user: User = Depends(get_current_user)
     if not reason:
         raise HTTPException(status_code=400, detail="Reason is required")
     db.add(MapReport(map_id=payload.map_id, user_id=user.id, reason=reason))
+    game_map = db.query(Map).filter(Map.id == payload.map_id).first()
+    if game_map:
+        _create_notification(
+            db,
+            game_map.author_id,
+            user.id,
+            game_map.id,
+            "map_report",
+            "Signalement recu",
+            f"{user.pseudo} a signale votre map {game_map.title}.",
+        )
     db.commit()
     return {"message": "Report submitted"}
+
+
+@router.get("/mine")
+def get_my_maps(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    my_maps = (
+        db.query(Map)
+        .filter(Map.author_id == user.id)
+        .order_by(Map.last_updated_at.desc(), Map.created_at.desc())
+        .all()
+    )
+    return [_serialize_map(game_map, db, user) for game_map in my_maps]
+
+
+@router.get("/notifications")
+def get_notifications(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    notifications = (
+        db.query(Notification)
+        .filter(Notification.user_id == user.id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    unread_count = len([notification for notification in notifications if not notification.is_read])
+
+    return {
+        "unread_count": unread_count,
+        "items": [
+            {
+                "id": notification.id,
+                "type": notification.type,
+                "title": notification.title,
+                "message": notification.message,
+                "map_id": notification.map_id,
+                "is_read": notification.is_read,
+                "created_at": notification.created_at,
+            }
+            for notification in notifications
+        ],
+    }
+
+
+@router.post("/notifications/read-all")
+def read_all_notifications(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    notifications = db.query(Notification).filter(Notification.user_id == user.id, Notification.is_read.is_(False)).all()
+    for notification in notifications:
+        notification.is_read = True
+    db.commit()
+    return {"message": "Notifications marked as read"}
+
+
+@router.delete("/comment/{comment_id}")
+def delete_comment(comment_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    comment = db.query(MapComment).filter(MapComment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    game_map = db.query(Map).filter(Map.id == comment.map_id).first()
+    if not game_map:
+        raise HTTPException(status_code=404, detail="Map not found")
+
+    if comment.user_id != user.id and game_map.author_id != user.id and user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not allowed to delete this comment")
+
+    db.delete(comment)
+    db.commit()
+    return {"message": "Comment deleted"}
 
 
 @router.get("/creator-stats")
