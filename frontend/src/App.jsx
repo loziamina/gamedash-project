@@ -12,6 +12,7 @@ import OAuthSuccess from "./pages/OAuthSuccess";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
+import Maps from "./pages/Maps";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -25,6 +26,7 @@ function AnimatedRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/oauth-success" element={<OAuthSuccess />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/maps" element={<Maps />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/matchmaking" element={<Matchmaking />} />

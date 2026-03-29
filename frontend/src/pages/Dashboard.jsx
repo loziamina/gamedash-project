@@ -122,6 +122,13 @@ export default function Dashboard() {
             Voir evolution ELO
           </button>
 
+          <button
+            onClick={() => window.location.href = "/maps"}
+            className="rounded-xl bg-purple-600 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/20 active:scale-95"
+          >
+            Community Maps
+          </button>
+
           {currentUser?.role === "admin" && (
             <button
               onClick={() => window.location.href = "/admin"}
