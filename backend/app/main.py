@@ -4,7 +4,16 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import SECRET_KEY
 from app.database import Base, engine, ensure_schema
-from app.models import map_comment, map_favorite, map_tag  # noqa: F401
+from app.models import (  # noqa: F401
+    map_comment,
+    map_favorite,
+    map_playtest,
+    map_report,
+    map_tag,
+    reward_settings,
+    sanction_log,
+    virtual_transaction,
+)
 from app.routes import admin, auth, dashboard, maps, matchmaking, matchmaking_ws, user
 
 Base.metadata.create_all(bind=engine)

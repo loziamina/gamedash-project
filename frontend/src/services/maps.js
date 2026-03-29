@@ -21,7 +21,15 @@ export const getMaps = async (params = {}) => {
   return res.json();
 };
 
-export const createMap = async ({ title, description, status, tags }) => {
+export const getCreatorStats = async () => {
+  const res = await fetch(`${API}/maps/creator-stats`);
+  if (!res.ok) {
+    throw new Error("Unable to fetch creator stats");
+  }
+  return res.json();
+};
+
+export const createMap = async ({ title, description, status, tags, content_url, screenshot_urls }) => {
   const token = localStorage.getItem("token");
 
   const res = await fetch(`${API}/maps/`, {
@@ -30,7 +38,7 @@ export const createMap = async ({ title, description, status, tags }) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ title, description, status, tags }),
+    body: JSON.stringify({ title, description, status, tags, content_url, screenshot_urls }),
   });
 
   if (!res.ok) {
@@ -40,7 +48,7 @@ export const createMap = async ({ title, description, status, tags }) => {
   return res.json();
 };
 
-export const addMapVersion = async (mapId, notes) => {
+export const addMapVersion = async (mapId, notes, content_url, screenshot_urls = []) => {
   const token = localStorage.getItem("token");
 
   const res = await fetch(`${API}/maps/version`, {
@@ -49,7 +57,7 @@ export const addMapVersion = async (mapId, notes) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ map_id: mapId, notes }),
+    body: JSON.stringify({ map_id: mapId, notes, content_url, screenshot_urls }),
   });
 
   if (!res.ok) {
@@ -111,6 +119,44 @@ export const commentMap = async (id, content) => {
 
   if (!res.ok) {
     throw new Error("Unable to comment on map");
+  }
+
+  return res.json();
+};
+
+export const testMap = async (id, duration_seconds = 300, completion_rate = 1) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/maps/test`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ map_id: id, duration_seconds, completion_rate }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to record map test");
+  }
+
+  return res.json();
+};
+
+export const reportMap = async (id, reason) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/maps/report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ map_id: id, reason }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to report map");
   }
 
   return res.json();
