@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
@@ -146,6 +147,7 @@ export default function Maps() {
               Explorez les maps de la communaute, suivez les tendances et construisez
               votre propre espace de creation avec versions, favoris et commentaires.
             </p>
+            <BackToDashboardButton className="mt-4" />
           </div>
           <UserMenu user={currentUser} />
         </div>
