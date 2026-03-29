@@ -12,7 +12,9 @@ from app.models.match import Match
 from app.models.matchmaking_settings import MatchmakingSettings
 from app.models.queue import QueuePlayer
 from app.models.rank_settings import RankSettings
+from app.models.reward_settings import RewardSettings
 from app.models.user import User
+from app.models.virtual_transaction import VirtualTransaction
 from app.utils.progression import apply_progression
 from app.utils.rank import get_rank_payload
 
@@ -44,6 +46,18 @@ def get_or_create_settings(db: Session) -> MatchmakingSettings:
 
 def get_rank_settings(db: Session):
     return db.query(RankSettings).first()
+
+
+def get_reward_settings(db: Session):
+    settings = db.query(RewardSettings).first()
+
+    if not settings:
+        settings = RewardSettings()
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+
+    return settings
 
 
 def serialize_settings(settings: MatchmakingSettings):
@@ -449,8 +463,34 @@ def match_result(match_id: int, winner_id: int, db: Session = Depends(get_db)):
         match.player1_elo_change = -loser_loss
         match.player2_elo_change = winner_gain
 
-    winner_progression = apply_progression(winner, xp_gain=35, currency_gain=20)
-    loser_progression = apply_progression(loser, xp_gain=18, currency_gain=10)
+    reward_settings = get_reward_settings(db)
+    winner_progression = apply_progression(
+        winner,
+        xp_gain=reward_settings.win_xp,
+        currency_gain=reward_settings.win_currency,
+    )
+    loser_progression = apply_progression(
+        loser,
+        xp_gain=reward_settings.loss_xp,
+        currency_gain=reward_settings.loss_currency,
+    )
+
+    db.add(
+        VirtualTransaction(
+            user_id=winner.id,
+            amount=reward_settings.win_currency,
+            currency_type="soft",
+            source=f"{match.mode}_match_win",
+        )
+    )
+    db.add(
+        VirtualTransaction(
+            user_id=loser.id,
+            amount=reward_settings.loss_currency,
+            currency_type="soft",
+            source=f"{match.mode}_match_loss",
+        )
+    )
 
     if winner.id == match.player1_id:
         match.player1_xp_gain = winner_progression["xp_gain"]
