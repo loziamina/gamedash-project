@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
@@ -69,9 +70,12 @@ export default function Matchmaking() {
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
         <div className="mb-8 flex items-start justify-between gap-4">
-          <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-            Matchmaking
-          </h1>
+          <div>
+            <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+              Matchmaking
+            </h1>
+            <BackToDashboardButton className="mt-4" />
+          </div>
           <UserMenu user={currentUser} />
         </div>
 

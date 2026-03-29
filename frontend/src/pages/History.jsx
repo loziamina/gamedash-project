@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
@@ -36,9 +37,12 @@ export default function History() {
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
         <div className="mb-10 flex items-start justify-between gap-4">
-          <h1 className="bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-5xl font-black text-transparent">
-            MATCH HISTORY
-          </h1>
+          <div>
+            <h1 className="bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-5xl font-black text-transparent">
+              MATCH HISTORY
+            </h1>
+            <BackToDashboardButton className="mt-4" />
+          </div>
           <UserMenu user={currentUser} />
         </div>
 
@@ -96,15 +100,6 @@ export default function History() {
               Aucun match joue pour le moment...
             </p>
           )}
-        </div>
-
-        <div className="mt-10 text-center">
-          <button
-            onClick={() => window.location.href = "/dashboard"}
-            className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95"
-          >
-            Retour Dashboard
-          </button>
         </div>
       </div>
     </PageWrapper>

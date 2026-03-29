@@ -20,9 +20,17 @@ export default function UserMenu({ user }) {
         onClick={() => setIsOpen((value) => !value)}
         className="flex items-center gap-3 rounded-full border border-cyan-400/30 bg-slate-950/70 px-3 py-2 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/20"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-pink-500 font-black text-slate-950">
-          {initials}
-        </div>
+        {user?.avatar_url ? (
+          <img
+            src={user.avatar_url}
+            alt="Avatar"
+            className="h-11 w-11 rounded-full object-cover ring-2 ring-cyan-400/30"
+          />
+        ) : (
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-pink-500 font-black text-slate-950">
+            {initials}
+          </div>
+        )}
         <div className="hidden text-left sm:block">
           <p className="max-w-40 truncate text-sm font-semibold text-white">
             {user?.pseudo || "Profil"}
