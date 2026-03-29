@@ -166,7 +166,7 @@ Logique metier reutilisable.
 ## Documentation complementaire
 Document disponible :
 
-- [matchmaking-algorithm.md](docs/matchmaking-algorithm.md)
+- [matchmaking-algorithm.md](https://github.com/loziamina/gamedash-project/blob/main/docs/matchmaking-algorithm.md)
 
 ## Recommandations d'exploitation
 
@@ -176,5 +176,5 @@ Document disponible :
 
 ## Liens utiles
 
-- README racine : [README.md](README.md)
-- Frontend : [frontend/README.md](frontend/README.md)
+- README racine : [README.md](https://github.com/loziamina/gamedash-project/blob/main/README.md)
+- Frontend : [frontend/README.md](https://github.com/loziamina/gamedash-project/blob/main/frontend/README.md)
