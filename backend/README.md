@@ -164,12 +164,9 @@ Logique metier reutilisable.
 - moderation admin
 
 ## Documentation complementaire
-
-Le dossier [docs](/c:/Public/dev/gamedash-project/docs) contient la documentation projet.
-
 Document disponible :
 
-- [matchmaking-algorithm.md](/c:/Public/dev/gamedash-project/docs/matchmaking-algorithm.md)
+- [matchmaking-algorithm.md](docs/matchmaking-algorithm.md)
 
 ## Recommandations d'exploitation
 
@@ -179,5 +176,5 @@ Document disponible :
 
 ## Liens utiles
 
-- README racine : [README.md](/c:/Public/dev/gamedash-project/README.md)
-- Frontend : [frontend/README.md](/c:/Public/dev/gamedash-project/frontend/README.md)
+- README racine : [README.md](README.md)
+- Frontend : [frontend/README.md](frontend/README.md)
