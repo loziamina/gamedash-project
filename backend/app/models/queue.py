@@ -7,5 +7,6 @@ class QueuePlayer(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    mode = Column(String, default="ranked")
     joined_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="waiting")  # waiting / matched
