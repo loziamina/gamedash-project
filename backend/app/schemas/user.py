@@ -19,3 +19,12 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     password: str
+
+
+class UserProfileUpdate(BaseModel):
+    pseudo: str
+    avatar_url: str | None = None
+    bio: str | None = None
+    region: str | None = None
+    language: str | None = None
+    matchmaking_preferences: str | None = None

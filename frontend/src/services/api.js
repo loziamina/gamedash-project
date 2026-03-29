@@ -102,3 +102,39 @@ export async function getMe() {
 
   return response.json();
 }
+
+export async function updateProfile(userId, payload) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to update profile");
+  }
+
+  return response.json();
+}
+
+export async function deleteAccount(userId) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}/users/${userId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to delete account");
+  }
+
+  return response.json();
+}
