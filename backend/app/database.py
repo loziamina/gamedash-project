@@ -79,6 +79,24 @@ def ensure_schema():
                 if column_name not in match_columns:
                     connection.execute(text(statement))
 
+    if "maps" in inspector.get_table_names():
+        map_columns = {column["name"] for column in inspector.get_columns("maps")}
+        map_alter_statements = {
+            "content_url": "ALTER TABLE maps ADD COLUMN content_url TEXT",
+            "screenshot_urls": "ALTER TABLE maps ADD COLUMN screenshot_urls TEXT",
+            "tests_count": "ALTER TABLE maps ADD COLUMN tests_count INTEGER NOT NULL DEFAULT 0",
+            "retention_score": "ALTER TABLE maps ADD COLUMN retention_score FLOAT NOT NULL DEFAULT 0",
+            "featured": "ALTER TABLE maps ADD COLUMN featured BOOLEAN NOT NULL DEFAULT FALSE",
+            "hidden": "ALTER TABLE maps ADD COLUMN hidden BOOLEAN NOT NULL DEFAULT FALSE",
+            "featured_at": "ALTER TABLE maps ADD COLUMN featured_at TIMESTAMP NULL",
+            "last_updated_at": "ALTER TABLE maps ADD COLUMN last_updated_at TIMESTAMP NOT NULL DEFAULT NOW()",
+            "last_tested_at": "ALTER TABLE maps ADD COLUMN last_tested_at TIMESTAMP NULL",
+        }
+        with engine.begin() as connection:
+            for column_name, statement in map_alter_statements.items():
+                if column_name not in map_columns:
+                    connection.execute(text(statement))
+
 
 def get_db():
     db = SessionLocal()

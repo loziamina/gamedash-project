@@ -108,6 +108,100 @@ export const updateRankSettings = async (payload) => {
   return res.json();
 };
 
+export const getRewardSettings = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/reward-settings`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch reward settings");
+  }
+
+  return res.json();
+};
+
+export const updateRewardSettings = async (payload) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/reward-settings`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to update reward settings");
+  }
+
+  return res.json();
+};
+
+export const getSanctions = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/sanctions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch sanctions");
+  }
+
+  return res.json();
+};
+
+export const getMapsOverview = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/maps/overview`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch maps overview");
+  }
+
+  return res.json();
+};
+
+export const getAdminMaps = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/maps`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch admin maps");
+  }
+
+  return res.json();
+};
+
+export const moderateMap = async (mapId, payload) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/maps/${mapId}/moderate`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to moderate map");
+  }
+
+  return res.json();
+};
+
 export const banUser = async (id) => {
   const token = localStorage.getItem("token");
 
