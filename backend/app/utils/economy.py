@@ -191,6 +191,7 @@ def create_payment_record(db, user_id: int, provider: str, pack: StorePack):
         provider=provider,
         pack_sku=pack.sku,
         amount_cents=pack.price_cents,
+        status="pending",
         external_ref=f"SIM-{provider.upper()}-{uuid4().hex[:12]}",
     )
     db.add(payment)

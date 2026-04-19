@@ -14,6 +14,6 @@ class PaymentTransaction(Base):
     pack_sku = Column(String, nullable=False)
     amount_cents = Column(Integer, default=0)
     currency = Column(String, default="EUR")
-    status = Column(String, default="completed")
+    status = Column(String, default="pending")
     external_ref = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

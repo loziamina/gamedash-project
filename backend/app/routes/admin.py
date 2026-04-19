@@ -393,6 +393,17 @@ def upsert_store_item(payload: ShopItemPayload, user: User = Depends(get_current
     return serialize_shop_item(item)
 
 
+@router.delete("/store-items/{sku}")
+def delete_store_item(sku: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    item = db.query(ShopItem).filter(ShopItem.sku == sku).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Store item not found")
+    db.delete(item)
+    db.commit()
+    return {"message": "Store item deleted"}
+
+
 @router.get("/store-packs")
 def get_store_packs(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
@@ -421,6 +432,17 @@ def upsert_store_pack(payload: StorePackPayload, user: User = Depends(get_curren
     return serialize_pack(pack)
 
 
+@router.delete("/store-packs/{sku}")
+def delete_store_pack(sku: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    pack = db.query(StorePack).filter(StorePack.sku == sku).first()
+    if not pack:
+        raise HTTPException(status_code=404, detail="Store pack not found")
+    db.delete(pack)
+    db.commit()
+    return {"message": "Store pack deleted"}
+
+
 @router.get("/season-pass-tiers")
 def admin_get_season_pass_tiers(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
@@ -446,6 +468,17 @@ def upsert_season_pass_tier(payload: SeasonPassTierPayload, user: User = Depends
     db.commit()
     db.refresh(season_pass_tier)
     return serialize_season_pass_tier(season_pass_tier)
+
+
+@router.delete("/season-pass-tiers/{tier}")
+def delete_season_pass_tier(tier: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    season_pass_tier = db.query(SeasonPassTier).filter(SeasonPassTier.tier == tier).first()
+    if not season_pass_tier:
+        raise HTTPException(status_code=404, detail="Season pass tier not found")
+    db.delete(season_pass_tier)
+    db.commit()
+    return {"message": "Season pass tier deleted"}
 
 
 @router.get("/economy-transactions")

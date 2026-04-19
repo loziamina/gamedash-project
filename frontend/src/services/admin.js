@@ -186,6 +186,22 @@ export const upsertStoreItem = async (payload) => {
   return res.json();
 };
 
+export const deleteStoreItem = async (sku) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/store-items/${sku}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to delete store item");
+  }
+
+  return res.json();
+};
+
 export const getStorePacks = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API}/admin/store-packs`, {
@@ -217,6 +233,22 @@ export const upsertStorePack = async (payload) => {
   return res.json();
 };
 
+export const deleteStorePack = async (sku) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/store-packs/${sku}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to delete store pack");
+  }
+
+  return res.json();
+};
+
 export const getSeasonPassTiers = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API}/admin/season-pass-tiers`, {
@@ -243,6 +275,22 @@ export const upsertSeasonPassTier = async (payload) => {
 
   if (!res.ok) {
     throw new Error("Unable to save season pass tier");
+  }
+
+  return res.json();
+};
+
+export const deleteSeasonPassTier = async (tier) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/season-pass-tiers/${tier}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to delete season pass tier");
   }
 
   return res.json();

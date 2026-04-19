@@ -32,7 +32,7 @@ export const purchaseShopItem = async (sku) => {
 };
 
 export const checkoutPack = async (sku, provider) => {
-  const res = await fetch(`${API}/shop/packs/${sku}/checkout`, {
+  const res = await fetch(`${API}/shop/packs/${sku}/checkout-session`, {
     method: "POST",
     headers: authHeaders(true),
     body: JSON.stringify({ provider }),
@@ -41,6 +41,34 @@ export const checkoutPack = async (sku, provider) => {
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error.detail || "Unable to checkout pack");
+  }
+
+  return res.json();
+};
+
+export const getCheckoutSession = async (externalRef) => {
+  const res = await fetch(`${API}/shop/checkout/${externalRef}`, {
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Unable to fetch checkout session");
+  }
+
+  return res.json();
+};
+
+export const resolveCheckoutSession = async (externalRef, action) => {
+  const res = await fetch(`${API}/shop/checkout/${externalRef}/decision`, {
+    method: "POST",
+    headers: authHeaders(true),
+    body: JSON.stringify({ action }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Unable to resolve checkout session");
   }
 
   return res.json();
