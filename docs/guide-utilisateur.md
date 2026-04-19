@@ -235,3 +235,9 @@ Pour une demonstration complete :
 7. creer une map
 8. tester / commenter / voter la map
 9. ouvrir l'admin panel
+
+## 14. Documentation detaillee boutique
+
+Pour une description detaillee du module economie, consulter :
+
+- [boutique-economie.md](https://github.com/loziamina/gamedash-project/blob/main/docs/boutique-economie.md)

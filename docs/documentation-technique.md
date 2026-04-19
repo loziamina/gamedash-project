@@ -266,3 +266,4 @@ npm run dev
 - [matchmaking-algorithm.md](https://github.com/loziamina/gamedash-project/blob/main/docs/matchmaking-algorithm.md)
 - [plan-securite-conformite.md](https://github.com/loziamina/gamedash-project/blob/main/docs/plan-securite-conformite.md)
 - [guide-utilisateur.md](https://github.com/loziamina/gamedash-project/blob/main/docs/guide-utilisateur.md)
+- [boutique-economie.md](https://github.com/loziamina/gamedash-project/blob/main/docs/boutique-economie.md)

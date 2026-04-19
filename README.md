@@ -148,6 +148,7 @@ La documentation projet est centralisee dans le dossier [docs](https://github.co
 Document deja present :
 
 - [matchmaking-algorithm.md](https://github.com/loziamina/gamedash-project/blob/main/docs/matchmaking-algorithm.md)
+- [boutique-economie.md](https://github.com/loziamina/gamedash-project/blob/main/docs/boutique-economie.md)
 
 ## README par couche
 
