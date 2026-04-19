@@ -122,6 +122,114 @@ export const getRewardSettings = async () => {
   return res.json();
 };
 
+export const getEconomySettings = async () => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/economy-settings`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch economy settings");
+  }
+
+  return res.json();
+};
+
+export const updateEconomySettings = async (payload) => {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/admin/economy-settings`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to update economy settings");
+  }
+
+  return res.json();
+};
+
+export const getStoreItems = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/store-items`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch store items");
+  }
+
+  return res.json();
+};
+
+export const upsertStoreItem = async (payload) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/store-items`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to save store item");
+  }
+
+  return res.json();
+};
+
+export const getStorePacks = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/store-packs`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch store packs");
+  }
+
+  return res.json();
+};
+
+export const upsertStorePack = async (payload) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/store-packs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to save store pack");
+  }
+
+  return res.json();
+};
+
+export const getEconomyTransactions = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/economy-transactions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch economy transactions");
+  }
+
+  return res.json();
+};
+
 export const updateRewardSettings = async (payload) => {
   const token = localStorage.getItem("token");
 

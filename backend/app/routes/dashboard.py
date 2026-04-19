@@ -141,6 +141,7 @@ def me_summary(user: User = Depends(get_current_user), db: Session = Depends(get
         "xp": user.xp,
         "xp_needed_for_next_level": xp_needed_for_level(user.level),
         "soft_currency": user.soft_currency,
+        "hard_currency": user.hard_currency,
         "wins": wins,
         "losses": losses,
         "winrate": round((wins / len(finished_matches) * 100), 2) if finished_matches else 0,

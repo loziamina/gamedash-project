@@ -211,6 +211,9 @@ export default function Dashboard() {
                 <p className="mt-2 text-3xl font-bold text-yellow-300">
                   {summary?.soft_currency ?? currentUser?.soft_currency ?? 0}
                 </p>
+                <p className="mt-2 text-sm text-cyan-200">
+                  Hard {summary?.hard_currency ?? currentUser?.hard_currency ?? 0}
+                </p>
               </div>
             </div>
           </div>
@@ -300,6 +303,12 @@ export default function Dashboard() {
             className="rounded-xl bg-pink-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-pink-500/20 active:scale-95"
           >
             Voir evolution ELO
+          </button>
+          <button
+            onClick={() => window.location.href = "/store"}
+            className="rounded-xl bg-amber-400 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-amber-500/20 active:scale-95"
+          >
+            Boutique
           </button>
           <button
             onClick={() => window.location.href = "/maps"}

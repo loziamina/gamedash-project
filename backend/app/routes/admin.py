@@ -15,12 +15,23 @@ from app.models.map_report import MapReport
 from app.models.map_vote import MapVote
 from app.models.match import Match
 from app.models.matchmaking_settings import MatchmakingSettings
+from app.models.payment_transaction import PaymentTransaction
 from app.models.queue import QueuePlayer
 from app.models.rank_settings import RankSettings
 from app.models.reward_settings import RewardSettings
 from app.models.sanction_log import SanctionLog
+from app.models.shop_item import ShopItem
+from app.models.store_pack import StorePack
 from app.models.user import User
 from app.models.virtual_transaction import VirtualTransaction
+from app.utils.economy import (
+    build_transaction_feed,
+    ensure_store_seed_data,
+    get_or_create_economy_settings,
+    serialize_economy_settings,
+    serialize_pack,
+    serialize_shop_item,
+)
 from app.utils.rank import get_rank_payload
 
 router = APIRouter(prefix="/admin")
@@ -49,6 +60,43 @@ class RewardSettingsPayload(BaseModel):
     loss_currency: int
     daily_quest_bonus_xp: int
     weekly_quest_bonus_xp: int
+
+
+class EconomySettingsPayload(BaseModel):
+    starter_soft_currency: int
+    starter_hard_currency: int
+    season_name: str
+    season_tier_xp: int
+    premium_pass_price_hard: int
+    stripe_enabled: bool
+    paypal_enabled: bool
+
+
+class ShopItemPayload(BaseModel):
+    sku: str
+    name: str
+    description: str = ""
+    category: str = "cosmetic"
+    item_type: str = "avatar_frame"
+    rarity: str = "rare"
+    price_soft: int = 0
+    price_hard: int = 0
+    asset: str = ""
+    season_tier_required: int = 0
+    is_featured: bool = False
+    is_active: bool = True
+
+
+class StorePackPayload(BaseModel):
+    sku: str
+    name: str
+    description: str = ""
+    soft_currency: int = 0
+    hard_currency: int = 0
+    bonus_percent: int = 0
+    price_cents: int = 499
+    is_active: bool = True
+    is_featured: bool = False
 
 
 class ModerateMapPayload(BaseModel):
@@ -123,6 +171,22 @@ def serialize_reward_settings(settings: RewardSettings):
     }
 
 
+def serialize_admin_user(target: User):
+    return {
+        "id": target.id,
+        "email": target.email,
+        "role": target.role,
+        "elo": target.elo,
+        "active": target.is_active,
+        "player_status": target.player_status,
+        "level": target.level,
+        "soft_currency": target.soft_currency,
+        "hard_currency": target.hard_currency,
+        "equipped_avatar_frame": target.equipped_avatar_frame,
+        "equipped_title": target.equipped_title,
+    }
+
+
 def map_admin_payload(game_map: Map, db: Session):
     votes = db.query(MapVote).filter(MapVote.map_id == game_map.id).all()
     tests = db.query(MapPlaytest).filter(MapPlaytest.map_id == game_map.id).all()
@@ -193,20 +257,7 @@ def admin_stats(user: User = Depends(get_current_user), db: Session = Depends(ge
 @router.get("/users")
 def get_users(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
-    users = db.query(User).all()
-    return [
-        {
-            "id": target.id,
-            "email": target.email,
-            "role": target.role,
-            "elo": target.elo,
-            "active": target.is_active,
-            "player_status": target.player_status,
-            "level": target.level,
-            "soft_currency": target.soft_currency,
-        }
-        for target in users
-    ]
+    return [serialize_admin_user(target) for target in db.query(User).all()]
 
 
 @router.get("/matchmaking-settings")
@@ -273,6 +324,100 @@ def update_reward_settings(payload: RewardSettingsPayload, user: User = Depends(
     db.commit()
     db.refresh(settings)
     return serialize_reward_settings(settings)
+
+
+@router.get("/economy-settings")
+def get_economy_settings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    ensure_store_seed_data(db)
+    return serialize_economy_settings(get_or_create_economy_settings(db))
+
+
+@router.put("/economy-settings")
+def update_economy_settings(payload: EconomySettingsPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    settings = get_or_create_economy_settings(db)
+    settings.starter_soft_currency = max(0, payload.starter_soft_currency)
+    settings.starter_hard_currency = max(0, payload.starter_hard_currency)
+    settings.season_name = payload.season_name.strip() or settings.season_name
+    settings.season_tier_xp = max(1, payload.season_tier_xp)
+    settings.premium_pass_price_hard = max(1, payload.premium_pass_price_hard)
+    settings.stripe_enabled = payload.stripe_enabled
+    settings.paypal_enabled = payload.paypal_enabled
+    db.commit()
+    db.refresh(settings)
+    return serialize_economy_settings(settings)
+
+
+@router.get("/store-items")
+def get_store_items(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    ensure_store_seed_data(db)
+    items = db.query(ShopItem).order_by(ShopItem.is_featured.desc(), ShopItem.name.asc()).all()
+    return [serialize_shop_item(item) for item in items]
+
+
+@router.post("/store-items")
+def upsert_store_item(payload: ShopItemPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    ensure_store_seed_data(db)
+    item = db.query(ShopItem).filter(ShopItem.sku == payload.sku).first()
+    if not item:
+        item = ShopItem(sku=payload.sku)
+        db.add(item)
+
+    item.name = payload.name
+    item.description = payload.description
+    item.category = payload.category
+    item.item_type = payload.item_type
+    item.rarity = payload.rarity
+    item.price_soft = max(0, payload.price_soft)
+    item.price_hard = max(0, payload.price_hard)
+    item.asset = payload.asset
+    item.season_tier_required = max(0, payload.season_tier_required)
+    item.is_featured = payload.is_featured
+    item.is_active = payload.is_active
+    db.commit()
+    db.refresh(item)
+    return serialize_shop_item(item)
+
+
+@router.get("/store-packs")
+def get_store_packs(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    ensure_store_seed_data(db)
+    packs = db.query(StorePack).order_by(StorePack.is_featured.desc(), StorePack.price_cents.asc()).all()
+    return [serialize_pack(pack) for pack in packs]
+
+
+@router.post("/store-packs")
+def upsert_store_pack(payload: StorePackPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    ensure_store_seed_data(db)
+    pack = db.query(StorePack).filter(StorePack.sku == payload.sku).first()
+    if not pack:
+        pack = StorePack(sku=payload.sku)
+        db.add(pack)
+
+    pack.name = payload.name
+    pack.description = payload.description
+    pack.soft_currency = max(0, payload.soft_currency)
+    pack.hard_currency = max(0, payload.hard_currency)
+    pack.bonus_percent = max(0, payload.bonus_percent)
+    pack.price_cents = max(0, payload.price_cents)
+    pack.is_active = payload.is_active
+    pack.is_featured = payload.is_featured
+    db.commit()
+    db.refresh(pack)
+    return serialize_pack(pack)
+
+
+@router.get("/economy-transactions")
+def get_economy_transactions(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    virtual_transactions = db.query(VirtualTransaction).order_by(VirtualTransaction.created_at.desc()).limit(100).all()
+    payment_transactions = db.query(PaymentTransaction).order_by(PaymentTransaction.created_at.desc()).limit(100).all()
+    return {"transactions": build_transaction_feed(virtual_transactions, payment_transactions)}
 
 
 @router.get("/matchmaking-overview")

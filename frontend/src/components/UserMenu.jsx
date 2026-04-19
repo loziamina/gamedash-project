@@ -73,6 +73,14 @@ export default function UserMenu({ user }) {
           </button>
           <button
             onClick={() => {
+              window.location.href = "/store";
+            }}
+            className="w-full rounded-xl px-4 py-3 text-left text-sm text-white transition hover:bg-white/10"
+          >
+            Boutique & inventaire
+          </button>
+          <button
+            onClick={() => {
               window.location.href = "/my-maps";
             }}
             className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm text-white transition hover:bg-white/10"
