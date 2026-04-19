@@ -217,6 +217,37 @@ export const upsertStorePack = async (payload) => {
   return res.json();
 };
 
+export const getSeasonPassTiers = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/season-pass-tiers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to fetch season pass tiers");
+  }
+
+  return res.json();
+};
+
+export const upsertSeasonPassTier = async (payload) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}/admin/season-pass-tiers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error("Unable to save season pass tier");
+  }
+
+  return res.json();
+};
+
 export const getEconomyTransactions = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API}/admin/economy-transactions`, {

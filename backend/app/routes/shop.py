@@ -6,6 +6,7 @@ from app.core.dependencies import get_current_user
 from app.database import get_db
 from app.models.inventory_item import InventoryItem
 from app.models.payment_transaction import PaymentTransaction
+from app.models.season_pass_tier import SeasonPassTier
 from app.models.shop_item import ShopItem
 from app.models.store_pack import StorePack
 from app.models.user import User
@@ -15,7 +16,6 @@ from app.utils.economy import (
     build_transaction_feed,
     create_payment_record,
     dump_claimed_tiers,
-    ensure_store_seed_data,
     get_or_create_economy_settings,
     get_or_create_season_pass,
     get_season_pass_tiers,
@@ -41,7 +41,6 @@ def get_user_inventory_map(db: Session, user_id: int):
 
 
 def get_shop_overview_payload(db: Session, user: User):
-    ensure_store_seed_data(db)
     settings = get_or_create_economy_settings(db)
     season_pass = get_or_create_season_pass(db, user, settings)
     items = db.query(ShopItem).filter(ShopItem.is_active.is_(True)).order_by(ShopItem.is_featured.desc(), ShopItem.price_soft.asc()).all()
@@ -58,7 +57,7 @@ def get_shop_overview_payload(db: Session, user: User):
     claimed_premium = parse_claimed_tiers(season_pass.claimed_premium_tiers)
     season_tiers = []
     highest_tier = 0
-    for tier in get_season_pass_tiers(settings.season_tier_xp):
+    for tier in get_season_pass_tiers(db):
         unlocked = user.xp >= tier["xp_required"]
         if unlocked:
             highest_tier = tier["tier"]
@@ -126,7 +125,6 @@ def get_shop_overview(user: User = Depends(get_current_user), db: Session = Depe
 
 @router.post("/items/{sku}/purchase")
 def purchase_shop_item(sku: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    ensure_store_seed_data(db)
     item = db.query(ShopItem).filter(ShopItem.sku == sku, ShopItem.is_active.is_(True)).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -163,7 +161,6 @@ def simulated_checkout(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ensure_store_seed_data(db)
     settings = get_or_create_economy_settings(db)
     provider = payload.provider.lower()
     if provider not in {"stripe", "paypal"}:
@@ -191,7 +188,6 @@ def simulated_checkout(
 
 @router.post("/season-pass/purchase")
 def purchase_season_pass(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    ensure_store_seed_data(db)
     settings = get_or_create_economy_settings(db)
     season_pass = get_or_create_season_pass(db, user, settings)
 
@@ -210,10 +206,9 @@ def purchase_season_pass(user: User = Depends(get_current_user), db: Session = D
 
 @router.post("/season-pass/claim/{tier}")
 def claim_season_pass_tier(tier: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    ensure_store_seed_data(db)
     settings = get_or_create_economy_settings(db)
     season_pass = get_or_create_season_pass(db, user, settings)
-    tier_payload = next((entry for entry in get_season_pass_tiers(settings.season_tier_xp) if entry["tier"] == tier), None)
+    tier_payload = next((entry for entry in get_season_pass_tiers(db) if entry["tier"] == tier), None)
     if not tier_payload:
         raise HTTPException(status_code=404, detail="Tier not found")
     if user.xp < tier_payload["xp_required"]:
@@ -221,14 +216,20 @@ def claim_season_pass_tier(tier: int, user: User = Depends(get_current_user), db
 
     claimed_free = parse_claimed_tiers(season_pass.claimed_free_tiers)
     claimed_premium = parse_claimed_tiers(season_pass.claimed_premium_tiers)
+    rewards_claimed = False
 
     if tier not in claimed_free:
         apply_reward(db, user, tier_payload["free_reward"], f"season_free_tier_{tier}")
         claimed_free.add(tier)
+        rewards_claimed = True
 
     if season_pass.premium_unlocked and tier not in claimed_premium:
         apply_reward(db, user, tier_payload["premium_reward"], f"season_premium_tier_{tier}")
         claimed_premium.add(tier)
+        rewards_claimed = True
+
+    if not rewards_claimed:
+        raise HTTPException(status_code=400, detail="Tier rewards already claimed")
 
     season_pass.claimed_free_tiers = dump_claimed_tiers(claimed_free)
     season_pass.claimed_premium_tiers = dump_claimed_tiers(claimed_premium)

@@ -17,6 +17,7 @@ from app.models import (  # noqa: F401
     reward_settings,
     sanction_log,
     season_pass,
+    season_pass_tier,
     shop_item,
     store_pack,
     virtual_transaction,
