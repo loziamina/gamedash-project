@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -18,6 +18,9 @@ import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import {
   banUser,
+  deleteSeasonPassTier,
+  deleteStoreItem,
+  deleteStorePack,
   getEconomySettings,
   getEconomyTransactions,
   getAdminMaps,
@@ -44,6 +47,45 @@ import {
 } from "../services/admin";
 
 const rankColors = ["#fb923c", "#cbd5e1", "#facc15", "#22d3ee", "#a855f7", "#f472b6"];
+
+const defaultItemDraft = {
+  sku: "",
+  name: "",
+  description: "",
+  category: "cosmetic",
+  item_type: "avatar_frame",
+  rarity: "rare",
+  price_soft: 0,
+  price_hard: 0,
+  asset: "",
+  season_tier_required: 0,
+  is_featured: false,
+  is_active: true,
+};
+
+const defaultPackDraft = {
+  sku: "",
+  name: "",
+  description: "",
+  soft_currency: 0,
+  hard_currency: 0,
+  bonus_percent: 0,
+  price_cents: 499,
+  is_active: true,
+  is_featured: false,
+};
+
+const defaultTierDraft = {
+  tier: 1,
+  xp_required: 0,
+  free_reward_type: "soft_currency",
+  free_reward_amount: 0,
+  free_reward_sku: "",
+  premium_reward_type: "soft_currency",
+  premium_reward_amount: 0,
+  premium_reward_sku: "",
+  is_active: true,
+};
 
 export default function Admin() {
   const [stats, setStats] = useState({});
@@ -88,42 +130,9 @@ export default function Admin() {
   const [storePacks, setStorePacks] = useState([]);
   const [seasonPassTiers, setSeasonPassTiers] = useState([]);
   const [economyTransactions, setEconomyTransactions] = useState([]);
-  const [itemDraft, setItemDraft] = useState({
-    sku: "",
-    name: "",
-    description: "",
-    category: "cosmetic",
-    item_type: "avatar_frame",
-    rarity: "rare",
-    price_soft: 0,
-    price_hard: 0,
-    asset: "",
-    season_tier_required: 0,
-    is_featured: false,
-    is_active: true,
-  });
-  const [packDraft, setPackDraft] = useState({
-    sku: "",
-    name: "",
-    description: "",
-    soft_currency: 0,
-    hard_currency: 0,
-    bonus_percent: 0,
-    price_cents: 499,
-    is_active: true,
-    is_featured: false,
-  });
-  const [tierDraft, setTierDraft] = useState({
-    tier: 1,
-    xp_required: 0,
-    free_reward_type: "soft_currency",
-    free_reward_amount: 0,
-    free_reward_sku: "",
-    premium_reward_type: "soft_currency",
-    premium_reward_amount: 0,
-    premium_reward_sku: "",
-    is_active: true,
-  });
+  const [itemDraft, setItemDraft] = useState(defaultItemDraft);
+  const [packDraft, setPackDraft] = useState(defaultPackDraft);
+  const [tierDraft, setTierDraft] = useState(defaultTierDraft);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSavingRanks, setIsSavingRanks] = useState(false);
   const [isSavingRewards, setIsSavingRewards] = useState(false);
@@ -131,6 +140,9 @@ export default function Admin() {
   const [isSavingItem, setIsSavingItem] = useState(false);
   const [isSavingPack, setIsSavingPack] = useState(false);
   const [isSavingTier, setIsSavingTier] = useState(false);
+  const itemFormRef = useRef(null);
+  const packFormRef = useRef(null);
+  const tierFormRef = useRef(null);
 
   useEffect(() => {
     load();
@@ -328,20 +340,7 @@ export default function Admin() {
         season_tier_required: Number(itemDraft.season_tier_required),
       });
       toast.success("Objet boutique enregistre.");
-      setItemDraft({
-        sku: "",
-        name: "",
-        description: "",
-        category: "cosmetic",
-        item_type: "avatar_frame",
-        rarity: "rare",
-        price_soft: 0,
-        price_hard: 0,
-        asset: "",
-        season_tier_required: 0,
-        is_featured: false,
-        is_active: true,
-      });
+      setItemDraft(defaultItemDraft);
       await load();
     } catch (error) {
       console.error(error);
@@ -366,17 +365,7 @@ export default function Admin() {
         )
       );
       toast.success("Pack enregistre.");
-      setPackDraft({
-        sku: "",
-        name: "",
-        description: "",
-        soft_currency: 0,
-        hard_currency: 0,
-        bonus_percent: 0,
-        price_cents: 499,
-        is_active: true,
-        is_featured: false,
-      });
+      setPackDraft(defaultPackDraft);
       await load();
     } catch (error) {
       console.error(error);
@@ -398,17 +387,7 @@ export default function Admin() {
         premium_reward_amount: Number(tierDraft.premium_reward_amount),
       });
       toast.success("Tier du pass enregistre.");
-      setTierDraft({
-        tier: 1,
-        xp_required: 0,
-        free_reward_type: "soft_currency",
-        free_reward_amount: 0,
-        free_reward_sku: "",
-        premium_reward_type: "soft_currency",
-        premium_reward_amount: 0,
-        premium_reward_sku: "",
-        is_active: true,
-      });
+      setTierDraft(defaultTierDraft);
       await load();
     } catch (error) {
       console.error(error);
@@ -438,6 +417,53 @@ export default function Admin() {
       })),
     [stats.rank_distribution]
   );
+
+  const focusForm = (ref, message) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast.success(message);
+  };
+
+  const handleDeleteStoreItem = async (sku) => {
+    try {
+      await deleteStoreItem(sku);
+      toast.success("Objet supprime.");
+      if (itemDraft.sku === sku) {
+        setItemDraft(defaultItemDraft);
+      }
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de supprimer l'objet.");
+    }
+  };
+
+  const handleDeleteStorePack = async (sku) => {
+    try {
+      await deleteStorePack(sku);
+      toast.success("Pack supprime.");
+      if (packDraft.sku === sku) {
+        setPackDraft(defaultPackDraft);
+      }
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de supprimer le pack.");
+    }
+  };
+
+  const handleDeleteSeasonPassTier = async (tier) => {
+    try {
+      await deleteSeasonPassTier(tier);
+      toast.success("Tier supprime.");
+      if (Number(tierDraft.tier) === Number(tier)) {
+        setTierDraft(defaultTierDraft);
+      }
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de supprimer le tier.");
+    }
+  };
 
   if (currentUser && currentUser.role !== "admin") {
     return null;
@@ -661,7 +687,7 @@ export default function Admin() {
         </div>
 
         <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
-          <form onSubmit={handleSaveItem} className="dashboard-card rounded-3xl p-6">
+          <form ref={itemFormRef} onSubmit={handleSaveItem} className="dashboard-card rounded-3xl p-6">
             <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-300/70">Store content</p>
             <h2 className="mt-2 text-2xl font-bold text-white">Creer / mettre a jour un objet</h2>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -694,17 +720,52 @@ export default function Admin() {
             <button type="submit" disabled={isSavingItem} className="mt-6 rounded-2xl bg-fuchsia-500 px-6 py-3 font-semibold text-white transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
               {isSavingItem ? "Sauvegarde..." : "Enregistrer l'objet"}
             </button>
+            <button type="button" onClick={() => setItemDraft(defaultItemDraft)} className="mt-3 rounded-2xl border border-white/10 px-6 py-3 font-semibold text-slate-200 transition-all duration-200 hover:bg-white/5">
+              Nouveau formulaire
+            </button>
             <div className="mt-6 space-y-3">
-              {storeItems.slice(0, 6).map((item) => (
+              {storeItems.map((item) => (
                 <div key={item.sku} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                   <p className="font-semibold text-white">{item.name}</p>
                   <p className="text-sm text-slate-400">{item.sku} | soft {item.price_soft} | hard {item.price_hard}</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItemDraft({
+                          sku: item.sku,
+                          name: item.name,
+                          description: item.description || "",
+                          category: item.category,
+                          item_type: item.item_type,
+                          rarity: item.rarity,
+                          price_soft: item.price_soft,
+                          price_hard: item.price_hard,
+                          asset: item.asset || "",
+                          season_tier_required: item.season_tier_required,
+                          is_featured: item.is_featured,
+                          is_active: item.is_active,
+                        });
+                        focusForm(itemFormRef, `Objet ${item.name} charge dans le formulaire.`);
+                      }}
+                      className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Charger
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteStoreItem(item.sku)}
+                      className="rounded-xl bg-red-500/20 px-4 py-2 text-sm font-semibold text-red-200"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </form>
 
-          <form onSubmit={handleSavePack} className="dashboard-card rounded-3xl p-6">
+          <form ref={packFormRef} onSubmit={handleSavePack} className="dashboard-card rounded-3xl p-6">
             <p className="text-xs uppercase tracking-[0.3em] text-emerald-300/70">Packs</p>
             <h2 className="mt-2 text-2xl font-bold text-white">Creer / mettre a jour un pack</h2>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -734,11 +795,43 @@ export default function Admin() {
             <button type="submit" disabled={isSavingPack} className="mt-6 rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
               {isSavingPack ? "Sauvegarde..." : "Enregistrer le pack"}
             </button>
+            <button type="button" onClick={() => setPackDraft(defaultPackDraft)} className="mt-3 rounded-2xl border border-white/10 px-6 py-3 font-semibold text-slate-200 transition-all duration-200 hover:bg-white/5">
+              Nouveau formulaire
+            </button>
             <div className="mt-6 space-y-3">
-              {storePacks.slice(0, 6).map((pack) => (
+              {storePacks.map((pack) => (
                 <div key={pack.sku} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                   <p className="font-semibold text-white">{pack.name}</p>
                   <p className="text-sm text-slate-400">{pack.sku} | soft {pack.total_soft_currency} | hard {pack.total_hard_currency}</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPackDraft({
+                          sku: pack.sku,
+                          name: pack.name,
+                          description: pack.description || "",
+                          soft_currency: pack.soft_currency,
+                          hard_currency: pack.hard_currency,
+                          bonus_percent: pack.bonus_percent,
+                          price_cents: pack.price_cents,
+                          is_active: pack.is_active,
+                          is_featured: pack.is_featured,
+                        });
+                        focusForm(packFormRef, `Pack ${pack.name} charge dans le formulaire.`);
+                      }}
+                      className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Charger
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteStorePack(pack.sku)}
+                      className="rounded-xl bg-red-500/20 px-4 py-2 text-sm font-semibold text-red-200"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -746,7 +839,7 @@ export default function Admin() {
         </div>
 
         <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
-          <form onSubmit={handleSaveTier} className="dashboard-card rounded-3xl p-6">
+          <form ref={tierFormRef} onSubmit={handleSaveTier} className="dashboard-card rounded-3xl p-6">
             <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Season Pass</p>
             <h2 className="mt-2 text-2xl font-bold text-white">Creer / mettre a jour un tier</h2>
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -780,6 +873,9 @@ export default function Admin() {
             <button type="submit" disabled={isSavingTier} className="mt-6 rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
               {isSavingTier ? "Sauvegarde..." : "Enregistrer le tier"}
             </button>
+            <button type="button" onClick={() => setTierDraft(defaultTierDraft)} className="mt-3 rounded-2xl border border-white/10 px-6 py-3 font-semibold text-slate-200 transition-all duration-200 hover:bg-white/5">
+              Nouveau formulaire
+            </button>
           </form>
 
           <div className="dashboard-card rounded-3xl p-6">
@@ -795,6 +891,35 @@ export default function Admin() {
                   <p className="text-sm text-slate-400">
                     Premium: {tier.premium_reward.type} {tier.premium_reward.amount || tier.premium_reward.sku || ""}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTierDraft({
+                          tier: tier.tier,
+                          xp_required: tier.xp_required,
+                          free_reward_type: tier.free_reward.type,
+                          free_reward_amount: tier.free_reward.amount || 0,
+                          free_reward_sku: tier.free_reward.sku || "",
+                          premium_reward_type: tier.premium_reward.type,
+                          premium_reward_amount: tier.premium_reward.amount || 0,
+                          premium_reward_sku: tier.premium_reward.sku || "",
+                          is_active: tier.is_active,
+                        });
+                        focusForm(tierFormRef, `Tier ${tier.tier} charge dans le formulaire.`);
+                      }}
+                      className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white"
+                    >
+                      Charger
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSeasonPassTier(tier.tier)}
+                      className="rounded-xl bg-red-500/20 px-4 py-2 text-sm font-semibold text-red-200"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               ))}
               {seasonPassTiers.length === 0 && (

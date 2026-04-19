@@ -35,6 +35,10 @@ class SimulatedCheckoutPayload(BaseModel):
     provider: str
 
 
+class CheckoutDecisionPayload(BaseModel):
+    action: str
+
+
 def get_user_inventory_map(db: Session, user_id: int):
     inventory = db.query(InventoryItem).filter(InventoryItem.user_id == user_id).all()
     return {entry.item_sku: entry for entry in inventory}
@@ -154,8 +158,8 @@ def purchase_shop_item(sku: str, user: User = Depends(get_current_user), db: Ses
     return get_shop_overview_payload(db, user)
 
 
-@router.post("/packs/{sku}/checkout")
-def simulated_checkout(
+@router.post("/packs/{sku}/checkout-session")
+def create_simulated_checkout_session(
     sku: str,
     payload: SimulatedCheckoutPayload,
     user: User = Depends(get_current_user),
@@ -175,13 +179,74 @@ def simulated_checkout(
         raise HTTPException(status_code=404, detail="Pack not found")
 
     payment = create_payment_record(db, user.id, provider, pack)
-    pack_payload = serialize_pack(pack)
-    user.soft_currency += pack_payload["total_soft_currency"]
-    user.hard_currency += pack_payload["total_hard_currency"]
-    log_currency_transaction(db, user.id, pack_payload["total_soft_currency"], "soft", f"pack:{sku}:{provider}")
-    log_currency_transaction(db, user.id, pack_payload["total_hard_currency"], "hard", f"pack:{sku}:{provider}")
     db.commit()
     db.refresh(payment)
+    return {
+        "checkout_url": f"/checkout/{provider}-sim?session={payment.external_ref}",
+        "external_ref": payment.external_ref,
+        "provider": provider,
+        "pack": serialize_pack(pack),
+    }
+
+
+@router.get("/checkout/{external_ref}")
+def get_checkout_session(external_ref: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    payment = (
+        db.query(PaymentTransaction)
+        .filter(PaymentTransaction.external_ref == external_ref, PaymentTransaction.user_id == user.id)
+        .first()
+    )
+    if not payment:
+        raise HTTPException(status_code=404, detail="Checkout session not found")
+
+    pack = db.query(StorePack).filter(StorePack.sku == payment.pack_sku).first()
+    return {
+        "external_ref": payment.external_ref,
+        "provider": payment.provider,
+        "status": payment.status,
+        "amount_cents": payment.amount_cents,
+        "pack": serialize_pack(pack) if pack else None,
+    }
+
+
+@router.post("/checkout/{external_ref}/decision")
+def resolve_checkout_session(
+    external_ref: str,
+    payload: CheckoutDecisionPayload,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    payment = (
+        db.query(PaymentTransaction)
+        .filter(PaymentTransaction.external_ref == external_ref, PaymentTransaction.user_id == user.id)
+        .first()
+    )
+    if not payment:
+        raise HTTPException(status_code=404, detail="Checkout session not found")
+
+    if payment.status != "pending":
+        return get_shop_overview_payload(db, user)
+
+    action = payload.action.lower()
+    if action not in {"confirm", "cancel"}:
+        raise HTTPException(status_code=400, detail="Unsupported checkout action")
+
+    if action == "cancel":
+        payment.status = "cancelled"
+        db.commit()
+        return get_shop_overview_payload(db, user)
+
+    pack = db.query(StorePack).filter(StorePack.sku == payment.pack_sku, StorePack.is_active.is_(True)).first()
+    if not pack:
+        raise HTTPException(status_code=404, detail="Pack not found")
+
+    pack_payload = serialize_pack(pack)
+    payment.status = "completed"
+    user.soft_currency += pack_payload["total_soft_currency"]
+    user.hard_currency += pack_payload["total_hard_currency"]
+    log_currency_transaction(db, user.id, pack_payload["total_soft_currency"], "soft", f"pack:{pack.sku}:{payment.provider}")
+    log_currency_transaction(db, user.id, pack_payload["total_hard_currency"], "hard", f"pack:{pack.sku}:{payment.provider}")
+    db.commit()
     db.refresh(user)
     return get_shop_overview_payload(db, user)
 

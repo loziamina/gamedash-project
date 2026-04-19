@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import Maps from "./pages/Maps";
 import MyMaps from "./pages/MyMaps";
 import Store from "./pages/Store";
+import CheckoutSim from "./pages/CheckoutSim";
 import { getMe } from "./services/api";
 
 function ProtectedRoute({ children }) {
@@ -71,6 +72,7 @@ function AnimatedRoutes() {
         <Route path="/maps" element={<ProtectedRoute><Maps /></ProtectedRoute>} />
         <Route path="/my-maps" element={<ProtectedRoute><MyMaps /></ProtectedRoute>} />
         <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
+        <Route path="/checkout/:providerSlug" element={<ProtectedRoute><CheckoutSim /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         <Route path="/matchmaking" element={<ProtectedRoute><Matchmaking /></ProtectedRoute>} />

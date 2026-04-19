@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
@@ -20,6 +21,7 @@ const rarityClasses = {
 };
 
 export default function Store() {
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -238,8 +240,15 @@ export default function Store() {
                         disabled={busyKey === `${pack.sku}-stripe`}
                         onClick={async () => {
                           setBusyKey(`${pack.sku}-stripe`);
-                          await refreshWith(checkoutPack(pack.sku, "stripe"), "Paiement Stripe simule avec succes.");
-                          setBusyKey("");
+                          try {
+                            const data = await checkoutPack(pack.sku, "stripe");
+                            navigate(data.checkout_url);
+                          } catch (error) {
+                            console.error(error);
+                            toast.error(error.message || "Operation impossible.");
+                          } finally {
+                            setBusyKey("");
+                          }
                         }}
                         className="rounded-xl bg-violet-500 px-4 py-2 font-semibold text-white disabled:opacity-50"
                       >
@@ -251,8 +260,15 @@ export default function Store() {
                         disabled={busyKey === `${pack.sku}-paypal`}
                         onClick={async () => {
                           setBusyKey(`${pack.sku}-paypal`);
-                          await refreshWith(checkoutPack(pack.sku, "paypal"), "Paiement PayPal simule avec succes.");
-                          setBusyKey("");
+                          try {
+                            const data = await checkoutPack(pack.sku, "paypal");
+                            navigate(data.checkout_url);
+                          } catch (error) {
+                            console.error(error);
+                            toast.error(error.message || "Operation impossible.");
+                          } finally {
+                            setBusyKey("");
+                          }
                         }}
                         className="rounded-xl bg-sky-500 px-4 py-2 font-semibold text-white disabled:opacity-50"
                       >
