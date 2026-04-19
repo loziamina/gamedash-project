@@ -5,17 +5,23 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config import SECRET_KEY
 from app.database import Base, engine, ensure_schema
 from app.models import (  # noqa: F401
+    economy_settings,
+    inventory_item,
     map_comment,
     map_favorite,
     map_playtest,
     map_report,
     map_tag,
     notification,
+    payment_transaction,
     reward_settings,
     sanction_log,
+    season_pass,
+    shop_item,
+    store_pack,
     virtual_transaction,
 )
-from app.routes import admin, auth, dashboard, maps, matchmaking, matchmaking_ws, user
+from app.routes import admin, auth, dashboard, maps, matchmaking, matchmaking_ws, shop, user
 
 Base.metadata.create_all(bind=engine)
 ensure_schema()
@@ -42,6 +48,7 @@ app.include_router(matchmaking.router, prefix="/matchmaking", tags=["Matchmaking
 app.include_router(maps.router, tags=["Maps"])
 app.include_router(matchmaking_ws.router)
 app.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+app.include_router(shop.router, prefix="/shop", tags=["Shop"])
 
 
 @app.get("/")

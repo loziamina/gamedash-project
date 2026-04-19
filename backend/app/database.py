@@ -48,6 +48,9 @@ def ensure_schema():
         "xp": "ALTER TABLE users ADD COLUMN xp INTEGER NOT NULL DEFAULT 0",
         "level": "ALTER TABLE users ADD COLUMN level INTEGER NOT NULL DEFAULT 1",
         "soft_currency": "ALTER TABLE users ADD COLUMN soft_currency INTEGER NOT NULL DEFAULT 0",
+        "hard_currency": "ALTER TABLE users ADD COLUMN hard_currency INTEGER NOT NULL DEFAULT 0",
+        "equipped_avatar_frame": "ALTER TABLE users ADD COLUMN equipped_avatar_frame VARCHAR",
+        "equipped_title": "ALTER TABLE users ADD COLUMN equipped_title VARCHAR",
     }
 
     with engine.begin() as connection:

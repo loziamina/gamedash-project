@@ -18,6 +18,8 @@ import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import {
   banUser,
+  getEconomySettings,
+  getEconomyTransactions,
   getAdminMaps,
   getAdminStats,
   getMapsOverview,
@@ -26,12 +28,17 @@ import {
   getRankSettings,
   getRewardSettings,
   getSanctions,
+  getStoreItems,
+  getStorePacks,
   getUsers,
   moderateMap,
   unbanUser,
+  updateEconomySettings,
   updateMatchmakingSettings,
   updateRankSettings,
   updateRewardSettings,
+  upsertStoreItem,
+  upsertStorePack,
 } from "../services/admin";
 
 const rankColors = ["#fb923c", "#cbd5e1", "#facc15", "#22d3ee", "#a855f7", "#f472b6"];
@@ -64,11 +71,51 @@ export default function Admin() {
     weekly_quest_bonus_xp: 120,
   });
   const [sanctions, setSanctions] = useState([]);
+  const [economySettings, setEconomySettings] = useState({
+    starter_soft_currency: 250,
+    starter_hard_currency: 25,
+    season_name: "Saison Neon Uprising",
+    season_tier_xp: 120,
+    premium_pass_price_hard: 15,
+    stripe_enabled: true,
+    paypal_enabled: true,
+  });
   const [mapsOverview, setMapsOverview] = useState(null);
   const [adminMaps, setAdminMaps] = useState([]);
+  const [storeItems, setStoreItems] = useState([]);
+  const [storePacks, setStorePacks] = useState([]);
+  const [economyTransactions, setEconomyTransactions] = useState([]);
+  const [itemDraft, setItemDraft] = useState({
+    sku: "",
+    name: "",
+    description: "",
+    category: "cosmetic",
+    item_type: "avatar_frame",
+    rarity: "rare",
+    price_soft: 0,
+    price_hard: 0,
+    asset: "",
+    season_tier_required: 0,
+    is_featured: false,
+    is_active: true,
+  });
+  const [packDraft, setPackDraft] = useState({
+    sku: "",
+    name: "",
+    description: "",
+    soft_currency: 0,
+    hard_currency: 0,
+    bonus_percent: 0,
+    price_cents: 499,
+    is_active: true,
+    is_featured: false,
+  });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSavingRanks, setIsSavingRanks] = useState(false);
   const [isSavingRewards, setIsSavingRewards] = useState(false);
+  const [isSavingEconomy, setIsSavingEconomy] = useState(false);
+  const [isSavingItem, setIsSavingItem] = useState(false);
+  const [isSavingPack, setIsSavingPack] = useState(false);
 
   useEffect(() => {
     load();
@@ -92,9 +139,13 @@ export default function Admin() {
         matchmakingOverview,
         rankSettingsData,
         rewardSettingsData,
+        economySettingsData,
         sanctionsData,
         mapsOverviewData,
         adminMapsData,
+        storeItemsData,
+        storePacksData,
+        economyTransactionsData,
       ] = await Promise.all([
         getAdminStats(),
         getUsers(),
@@ -102,9 +153,13 @@ export default function Admin() {
         getMatchmakingOverview(),
         getRankSettings(),
         getRewardSettings(),
+        getEconomySettings(),
         getSanctions(),
         getMapsOverview(),
         getAdminMaps(),
+        getStoreItems(),
+        getStorePacks(),
+        getEconomyTransactions(),
       ]);
 
       setStats(adminStats);
@@ -113,9 +168,13 @@ export default function Admin() {
       setOverview(matchmakingOverview);
       setRankSettings(rankSettingsData);
       setRewardSettings(rewardSettingsData);
+      setEconomySettings(economySettingsData);
       setSanctions(sanctionsData);
       setMapsOverview(mapsOverviewData);
       setAdminMaps(adminMapsData);
+      setStoreItems(storeItemsData);
+      setStorePacks(storePacksData);
+      setEconomyTransactions(economyTransactionsData.transactions || []);
     } catch (error) {
       console.error(error);
       toast.error("Impossible de charger l'admin panel.");
@@ -196,6 +255,10 @@ export default function Admin() {
     setRewardSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleEconomyChange = (key, value) => {
+    setEconomySettings((prev) => ({ ...prev, [key]: value }));
+  };
+
   const handleSaveRewards = async (event) => {
     event.preventDefault();
     try {
@@ -212,6 +275,96 @@ export default function Admin() {
       toast.error("Impossible de sauvegarder les recompenses.");
     } finally {
       setIsSavingRewards(false);
+    }
+  };
+
+  const handleSaveEconomy = async (event) => {
+    event.preventDefault();
+    try {
+      setIsSavingEconomy(true);
+      await updateEconomySettings({
+        ...economySettings,
+        starter_soft_currency: Number(economySettings.starter_soft_currency),
+        starter_hard_currency: Number(economySettings.starter_hard_currency),
+        season_tier_xp: Number(economySettings.season_tier_xp),
+        premium_pass_price_hard: Number(economySettings.premium_pass_price_hard),
+      });
+      toast.success("Reglages economie mis a jour.");
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de sauvegarder les reglages economie.");
+    } finally {
+      setIsSavingEconomy(false);
+    }
+  };
+
+  const handleSaveItem = async (event) => {
+    event.preventDefault();
+    try {
+      setIsSavingItem(true);
+      await upsertStoreItem({
+        ...itemDraft,
+        price_soft: Number(itemDraft.price_soft),
+        price_hard: Number(itemDraft.price_hard),
+        season_tier_required: Number(itemDraft.season_tier_required),
+      });
+      toast.success("Objet boutique enregistre.");
+      setItemDraft({
+        sku: "",
+        name: "",
+        description: "",
+        category: "cosmetic",
+        item_type: "avatar_frame",
+        rarity: "rare",
+        price_soft: 0,
+        price_hard: 0,
+        asset: "",
+        season_tier_required: 0,
+        is_featured: false,
+        is_active: true,
+      });
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible d'enregistrer l'objet.");
+    } finally {
+      setIsSavingItem(false);
+    }
+  };
+
+  const handleSavePack = async (event) => {
+    event.preventDefault();
+    try {
+      setIsSavingPack(true);
+      await upsertStorePack(
+        Object.fromEntries(
+          Object.entries(packDraft).map(([key, value]) => [
+            key,
+            ["soft_currency", "hard_currency", "bonus_percent", "price_cents"].includes(key)
+              ? Number(value)
+              : value,
+          ])
+        )
+      );
+      toast.success("Pack enregistre.");
+      setPackDraft({
+        sku: "",
+        name: "",
+        description: "",
+        soft_currency: 0,
+        hard_currency: 0,
+        bonus_percent: 0,
+        price_cents: 499,
+        is_active: true,
+        is_featured: false,
+      });
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible d'enregistrer le pack.");
+    } finally {
+      setIsSavingPack(false);
     }
   };
 
@@ -399,6 +552,150 @@ export default function Admin() {
           </form>
         </div>
 
+        <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+          <form onSubmit={handleSaveEconomy} className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-amber-300/70">Monetization</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Reglages economie & saison</h2>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[
+                ["starter_soft_currency", "Soft de depart"],
+                ["starter_hard_currency", "Hard de depart"],
+                ["season_tier_xp", "XP par tier"],
+                ["premium_pass_price_hard", "Prix pass premium"],
+              ].map(([key, label]) => (
+                <label key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{label}</p>
+                  <input type="number" value={economySettings[key]} onChange={(e) => handleEconomyChange(key, e.target.value)} className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
+                </label>
+              ))}
+              <label className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
+                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Nom de saison</p>
+                <input type="text" value={economySettings.season_name} onChange={(e) => handleEconomyChange("season_name", e.target.value)} className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
+              </label>
+            </div>
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              {[["stripe_enabled", "Stripe simule"], ["paypal_enabled", "PayPal simule"]].map(([key, label]) => (
+                <label key={key} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <span>{label}</span>
+                  <input type="checkbox" checked={economySettings[key]} onChange={(e) => handleEconomyChange(key, e.target.checked)} />
+                </label>
+              ))}
+            </div>
+            <button type="submit" disabled={isSavingEconomy} className="mt-6 rounded-2xl bg-amber-400 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
+              {isSavingEconomy ? "Sauvegarde..." : "Sauvegarder l'economie"}
+            </button>
+          </form>
+
+          <div className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Ledger</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Journal des transactions</h2>
+            <div className="mt-5 space-y-3">
+              {economyTransactions.slice(0, 10).map((entry) => (
+                <div key={entry.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-white">
+                      {entry.kind === "payment"
+                        ? `${entry.provider?.toUpperCase()} ${entry.pack_sku}`
+                        : `${entry.currency_type} ${entry.amount > 0 ? "+" : ""}${entry.amount}`}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {entry.created_at ? new Date(entry.created_at).toLocaleString() : "-"}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-400">
+                    {entry.kind === "payment" ? `${entry.status} | ${entry.external_ref}` : entry.source}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+          <form onSubmit={handleSaveItem} className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-300/70">Store content</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Creer / mettre a jour un objet</h2>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[
+                ["sku", "SKU"],
+                ["name", "Nom"],
+                ["description", "Description"],
+                ["category", "Categorie"],
+                ["item_type", "Type"],
+                ["rarity", "Rareté"],
+                ["price_soft", "Prix soft"],
+                ["price_hard", "Prix hard"],
+                ["asset", "Asset"],
+                ["season_tier_required", "Tier saison"],
+              ].map(([key, label]) => (
+                <label key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{label}</p>
+                  <input type={["price_soft", "price_hard", "season_tier_required"].includes(key) ? "number" : "text"} value={itemDraft[key]} onChange={(e) => setItemDraft((prev) => ({ ...prev, [key]: ["price_soft", "price_hard", "season_tier_required"].includes(key) ? e.target.value : e.target.value }))} className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
+                </label>
+              ))}
+            </div>
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              {[["is_featured", "Featured"], ["is_active", "Actif"]].map(([key, label]) => (
+                <label key={key} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <span>{label}</span>
+                  <input type="checkbox" checked={itemDraft[key]} onChange={(e) => setItemDraft((prev) => ({ ...prev, [key]: e.target.checked }))} />
+                </label>
+              ))}
+            </div>
+            <button type="submit" disabled={isSavingItem} className="mt-6 rounded-2xl bg-fuchsia-500 px-6 py-3 font-semibold text-white transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
+              {isSavingItem ? "Sauvegarde..." : "Enregistrer l'objet"}
+            </button>
+            <div className="mt-6 space-y-3">
+              {storeItems.slice(0, 6).map((item) => (
+                <div key={item.sku} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                  <p className="font-semibold text-white">{item.name}</p>
+                  <p className="text-sm text-slate-400">{item.sku} | soft {item.price_soft} | hard {item.price_hard}</p>
+                </div>
+              ))}
+            </div>
+          </form>
+
+          <form onSubmit={handleSavePack} className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-emerald-300/70">Packs</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Creer / mettre a jour un pack</h2>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[
+                ["sku", "SKU"],
+                ["name", "Nom"],
+                ["description", "Description"],
+                ["soft_currency", "Soft"],
+                ["hard_currency", "Hard"],
+                ["bonus_percent", "Bonus %"],
+                ["price_cents", "Prix centimes"],
+              ].map(([key, label]) => (
+                <label key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{label}</p>
+                  <input type={["soft_currency", "hard_currency", "bonus_percent", "price_cents"].includes(key) ? "number" : "text"} value={packDraft[key]} onChange={(e) => setPackDraft((prev) => ({ ...prev, [key]: e.target.value }))} className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none" />
+                </label>
+              ))}
+            </div>
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+              {[["is_featured", "Featured"], ["is_active", "Actif"]].map(([key, label]) => (
+                <label key={key} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <span>{label}</span>
+                  <input type="checkbox" checked={packDraft[key]} onChange={(e) => setPackDraft((prev) => ({ ...prev, [key]: e.target.checked }))} />
+                </label>
+              ))}
+            </div>
+            <button type="submit" disabled={isSavingPack} className="mt-6 rounded-2xl bg-emerald-500 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
+              {isSavingPack ? "Sauvegarde..." : "Enregistrer le pack"}
+            </button>
+            <div className="mt-6 space-y-3">
+              {storePacks.slice(0, 6).map((pack) => (
+                <div key={pack.sku} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                  <p className="font-semibold text-white">{pack.name}</p>
+                  <p className="text-sm text-slate-400">{pack.sku} | soft {pack.total_soft_currency} | hard {pack.total_hard_currency}</p>
+                </div>
+              ))}
+            </div>
+          </form>
+        </div>
+
         <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="dashboard-card rounded-3xl p-6">
             <p className="text-xs uppercase tracking-[0.3em] text-purple-300/70">UGC Activity</p>
@@ -481,7 +778,7 @@ export default function Admin() {
           {users.map((user) => (
             <div key={user.id} className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white/5 p-4">
               <div>
-                {user.email} | ELO: {user.elo} | level {user.level} | coins {user.soft_currency} | {user.role} | Etat: {user.player_status}
+                {user.email} | ELO: {user.elo} | level {user.level} | soft {user.soft_currency} | hard {user.hard_currency} | {user.role} | Etat: {user.player_status}
               </div>
               <div>
                 {user.active ? (

@@ -11,6 +11,7 @@ from app.core.reset_tokens import create_reset_token, verify_reset_token
 from app.core.security import ALGORITHM, SECRET_KEY, create_access_token, hash_password, verify_password
 from app.database import SessionLocal, get_db
 from app.models.user import User
+from app.models.economy_settings import EconomySettings
 from app.schemas.user import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
@@ -72,6 +73,9 @@ def serialize_user_profile(user: User):
         "xp": user.xp,
         "level": user.level,
         "soft_currency": user.soft_currency,
+        "hard_currency": user.hard_currency,
+        "equipped_avatar_frame": user.equipped_avatar_frame,
+        "equipped_title": user.equipped_title,
         "xp_needed_for_next_level": xp_needed_for_level(user.level),
     }
 
@@ -87,6 +91,11 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         password=hash_password(user.password),
         pseudo=user.pseudo,
     )
+
+    economy_settings = db.query(EconomySettings).first()
+    if economy_settings:
+        new_user.soft_currency = economy_settings.starter_soft_currency
+        new_user.hard_currency = economy_settings.starter_hard_currency
 
     db.add(new_user)
     db.commit()

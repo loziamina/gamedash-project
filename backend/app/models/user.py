@@ -24,4 +24,7 @@ class User(Base):
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
     soft_currency = Column(Integer, default=0)
+    hard_currency = Column(Integer, default=0)
+    equipped_avatar_frame = Column(String, nullable=True)
+    equipped_title = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
