@@ -28,6 +28,7 @@ import {
   getRankSettings,
   getRewardSettings,
   getSanctions,
+  getSeasonPassTiers,
   getStoreItems,
   getStorePacks,
   getUsers,
@@ -37,6 +38,7 @@ import {
   updateMatchmakingSettings,
   updateRankSettings,
   updateRewardSettings,
+  upsertSeasonPassTier,
   upsertStoreItem,
   upsertStorePack,
 } from "../services/admin";
@@ -72,18 +74,19 @@ export default function Admin() {
   });
   const [sanctions, setSanctions] = useState([]);
   const [economySettings, setEconomySettings] = useState({
-    starter_soft_currency: 250,
-    starter_hard_currency: 25,
-    season_name: "Saison Neon Uprising",
-    season_tier_xp: 120,
-    premium_pass_price_hard: 15,
-    stripe_enabled: true,
-    paypal_enabled: true,
+    starter_soft_currency: 0,
+    starter_hard_currency: 0,
+    season_name: "",
+    season_tier_xp: 0,
+    premium_pass_price_hard: 0,
+    stripe_enabled: false,
+    paypal_enabled: false,
   });
   const [mapsOverview, setMapsOverview] = useState(null);
   const [adminMaps, setAdminMaps] = useState([]);
   const [storeItems, setStoreItems] = useState([]);
   const [storePacks, setStorePacks] = useState([]);
+  const [seasonPassTiers, setSeasonPassTiers] = useState([]);
   const [economyTransactions, setEconomyTransactions] = useState([]);
   const [itemDraft, setItemDraft] = useState({
     sku: "",
@@ -110,12 +113,24 @@ export default function Admin() {
     is_active: true,
     is_featured: false,
   });
+  const [tierDraft, setTierDraft] = useState({
+    tier: 1,
+    xp_required: 0,
+    free_reward_type: "soft_currency",
+    free_reward_amount: 0,
+    free_reward_sku: "",
+    premium_reward_type: "soft_currency",
+    premium_reward_amount: 0,
+    premium_reward_sku: "",
+    is_active: true,
+  });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSavingRanks, setIsSavingRanks] = useState(false);
   const [isSavingRewards, setIsSavingRewards] = useState(false);
   const [isSavingEconomy, setIsSavingEconomy] = useState(false);
   const [isSavingItem, setIsSavingItem] = useState(false);
   const [isSavingPack, setIsSavingPack] = useState(false);
+  const [isSavingTier, setIsSavingTier] = useState(false);
 
   useEffect(() => {
     load();
@@ -145,6 +160,7 @@ export default function Admin() {
         adminMapsData,
         storeItemsData,
         storePacksData,
+        seasonPassTiersData,
         economyTransactionsData,
       ] = await Promise.all([
         getAdminStats(),
@@ -159,6 +175,7 @@ export default function Admin() {
         getAdminMaps(),
         getStoreItems(),
         getStorePacks(),
+        getSeasonPassTiers(),
         getEconomyTransactions(),
       ]);
 
@@ -174,6 +191,7 @@ export default function Admin() {
       setAdminMaps(adminMapsData);
       setStoreItems(storeItemsData);
       setStorePacks(storePacksData);
+      setSeasonPassTiers(seasonPassTiersData.tiers || []);
       setEconomyTransactions(economyTransactionsData.transactions || []);
     } catch (error) {
       console.error(error);
@@ -365,6 +383,38 @@ export default function Admin() {
       toast.error("Impossible d'enregistrer le pack.");
     } finally {
       setIsSavingPack(false);
+    }
+  };
+
+  const handleSaveTier = async (event) => {
+    event.preventDefault();
+    try {
+      setIsSavingTier(true);
+      await upsertSeasonPassTier({
+        ...tierDraft,
+        tier: Number(tierDraft.tier),
+        xp_required: Number(tierDraft.xp_required),
+        free_reward_amount: Number(tierDraft.free_reward_amount),
+        premium_reward_amount: Number(tierDraft.premium_reward_amount),
+      });
+      toast.success("Tier du pass enregistre.");
+      setTierDraft({
+        tier: 1,
+        xp_required: 0,
+        free_reward_type: "soft_currency",
+        free_reward_amount: 0,
+        free_reward_sku: "",
+        premium_reward_type: "soft_currency",
+        premium_reward_amount: 0,
+        premium_reward_sku: "",
+        is_active: true,
+      });
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible d'enregistrer le tier.");
+    } finally {
+      setIsSavingTier(false);
     }
   };
 
@@ -560,7 +610,6 @@ export default function Admin() {
               {[
                 ["starter_soft_currency", "Soft de depart"],
                 ["starter_hard_currency", "Hard de depart"],
-                ["season_tier_xp", "XP par tier"],
                 ["premium_pass_price_hard", "Prix pass premium"],
               ].map(([key, label]) => (
                 <label key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -694,6 +743,65 @@ export default function Admin() {
               ))}
             </div>
           </form>
+        </div>
+
+        <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+          <form onSubmit={handleSaveTier} className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Season Pass</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Creer / mettre a jour un tier</h2>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[
+                ["tier", "Tier"],
+                ["xp_required", "XP requis"],
+                ["free_reward_type", "Type reward free"],
+                ["free_reward_amount", "Montant free"],
+                ["free_reward_sku", "SKU free"],
+                ["premium_reward_type", "Type reward premium"],
+                ["premium_reward_amount", "Montant premium"],
+                ["premium_reward_sku", "SKU premium"],
+              ].map(([key, label]) => (
+                <label key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{label}</p>
+                  <input
+                    type={["tier", "xp_required", "free_reward_amount", "premium_reward_amount"].includes(key) ? "number" : "text"}
+                    value={tierDraft[key]}
+                    onChange={(e) => setTierDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+                    className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-5">
+              <label className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <span>Actif</span>
+                <input type="checkbox" checked={tierDraft.is_active} onChange={(e) => setTierDraft((prev) => ({ ...prev, is_active: e.target.checked }))} />
+              </label>
+            </div>
+            <button type="submit" disabled={isSavingTier} className="mt-6 rounded-2xl bg-cyan-400 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-[1.02] disabled:opacity-60">
+              {isSavingTier ? "Sauvegarde..." : "Enregistrer le tier"}
+            </button>
+          </form>
+
+          <div className="dashboard-card rounded-3xl p-6">
+            <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">Season Pass</p>
+            <h2 className="mt-2 text-2xl font-bold text-white">Tiers configures</h2>
+            <div className="mt-5 space-y-3">
+              {seasonPassTiers.map((tier) => (
+                <div key={tier.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="font-semibold text-white">Tier {tier.tier} | XP {tier.xp_required}</p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Free: {tier.free_reward.type} {tier.free_reward.amount || tier.free_reward.sku || ""}
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Premium: {tier.premium_reward.type} {tier.premium_reward.amount || tier.premium_reward.sku || ""}
+                  </p>
+                </div>
+              ))}
+              {seasonPassTiers.length === 0 && (
+                <p className="text-sm text-slate-500">Aucun tier configure.</p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="mb-10 grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">

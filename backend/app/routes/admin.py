@@ -20,16 +20,18 @@ from app.models.queue import QueuePlayer
 from app.models.rank_settings import RankSettings
 from app.models.reward_settings import RewardSettings
 from app.models.sanction_log import SanctionLog
+from app.models.season_pass_tier import SeasonPassTier
 from app.models.shop_item import ShopItem
 from app.models.store_pack import StorePack
 from app.models.user import User
 from app.models.virtual_transaction import VirtualTransaction
 from app.utils.economy import (
     build_transaction_feed,
-    ensure_store_seed_data,
     get_or_create_economy_settings,
+    get_season_pass_tiers,
     serialize_economy_settings,
     serialize_pack,
+    serialize_season_pass_tier,
     serialize_shop_item,
 )
 from app.utils.rank import get_rank_payload
@@ -97,6 +99,18 @@ class StorePackPayload(BaseModel):
     price_cents: int = 499
     is_active: bool = True
     is_featured: bool = False
+
+
+class SeasonPassTierPayload(BaseModel):
+    tier: int
+    xp_required: int = 0
+    free_reward_type: str = "soft_currency"
+    free_reward_amount: int = 0
+    free_reward_sku: str = ""
+    premium_reward_type: str = "soft_currency"
+    premium_reward_amount: int = 0
+    premium_reward_sku: str = ""
+    is_active: bool = True
 
 
 class ModerateMapPayload(BaseModel):
@@ -329,7 +343,6 @@ def update_reward_settings(payload: RewardSettingsPayload, user: User = Depends(
 @router.get("/economy-settings")
 def get_economy_settings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
-    ensure_store_seed_data(db)
     return serialize_economy_settings(get_or_create_economy_settings(db))
 
 
@@ -339,9 +352,9 @@ def update_economy_settings(payload: EconomySettingsPayload, user: User = Depend
     settings = get_or_create_economy_settings(db)
     settings.starter_soft_currency = max(0, payload.starter_soft_currency)
     settings.starter_hard_currency = max(0, payload.starter_hard_currency)
-    settings.season_name = payload.season_name.strip() or settings.season_name
-    settings.season_tier_xp = max(1, payload.season_tier_xp)
-    settings.premium_pass_price_hard = max(1, payload.premium_pass_price_hard)
+    settings.season_name = payload.season_name.strip()
+    settings.season_tier_xp = max(0, payload.season_tier_xp)
+    settings.premium_pass_price_hard = max(0, payload.premium_pass_price_hard)
     settings.stripe_enabled = payload.stripe_enabled
     settings.paypal_enabled = payload.paypal_enabled
     db.commit()
@@ -352,7 +365,6 @@ def update_economy_settings(payload: EconomySettingsPayload, user: User = Depend
 @router.get("/store-items")
 def get_store_items(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
-    ensure_store_seed_data(db)
     items = db.query(ShopItem).order_by(ShopItem.is_featured.desc(), ShopItem.name.asc()).all()
     return [serialize_shop_item(item) for item in items]
 
@@ -360,7 +372,6 @@ def get_store_items(user: User = Depends(get_current_user), db: Session = Depend
 @router.post("/store-items")
 def upsert_store_item(payload: ShopItemPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
-    ensure_store_seed_data(db)
     item = db.query(ShopItem).filter(ShopItem.sku == payload.sku).first()
     if not item:
         item = ShopItem(sku=payload.sku)
@@ -385,7 +396,6 @@ def upsert_store_item(payload: ShopItemPayload, user: User = Depends(get_current
 @router.get("/store-packs")
 def get_store_packs(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
-    ensure_store_seed_data(db)
     packs = db.query(StorePack).order_by(StorePack.is_featured.desc(), StorePack.price_cents.asc()).all()
     return [serialize_pack(pack) for pack in packs]
 
@@ -393,7 +403,6 @@ def get_store_packs(user: User = Depends(get_current_user), db: Session = Depend
 @router.post("/store-packs")
 def upsert_store_pack(payload: StorePackPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     require_admin(user)
-    ensure_store_seed_data(db)
     pack = db.query(StorePack).filter(StorePack.sku == payload.sku).first()
     if not pack:
         pack = StorePack(sku=payload.sku)
@@ -410,6 +419,33 @@ def upsert_store_pack(payload: StorePackPayload, user: User = Depends(get_curren
     db.commit()
     db.refresh(pack)
     return serialize_pack(pack)
+
+
+@router.get("/season-pass-tiers")
+def admin_get_season_pass_tiers(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    return {"tiers": get_season_pass_tiers(db)}
+
+
+@router.post("/season-pass-tiers")
+def upsert_season_pass_tier(payload: SeasonPassTierPayload, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    require_admin(user)
+    season_pass_tier = db.query(SeasonPassTier).filter(SeasonPassTier.tier == payload.tier).first()
+    if not season_pass_tier:
+        season_pass_tier = SeasonPassTier(tier=payload.tier)
+        db.add(season_pass_tier)
+
+    season_pass_tier.xp_required = max(0, payload.xp_required)
+    season_pass_tier.free_reward_type = payload.free_reward_type
+    season_pass_tier.free_reward_amount = max(0, payload.free_reward_amount)
+    season_pass_tier.free_reward_sku = payload.free_reward_sku.strip() or None
+    season_pass_tier.premium_reward_type = payload.premium_reward_type
+    season_pass_tier.premium_reward_amount = max(0, payload.premium_reward_amount)
+    season_pass_tier.premium_reward_sku = payload.premium_reward_sku.strip() or None
+    season_pass_tier.is_active = payload.is_active
+    db.commit()
+    db.refresh(season_pass_tier)
+    return serialize_season_pass_tier(season_pass_tier)
 
 
 @router.get("/economy-transactions")

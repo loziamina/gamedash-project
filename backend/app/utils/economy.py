@@ -5,96 +5,11 @@ from app.models.economy_settings import EconomySettings
 from app.models.inventory_item import InventoryItem
 from app.models.payment_transaction import PaymentTransaction
 from app.models.season_pass import SeasonPass
+from app.models.season_pass_tier import SeasonPassTier
 from app.models.shop_item import ShopItem
 from app.models.store_pack import StorePack
 from app.models.user import User
 from app.models.virtual_transaction import VirtualTransaction
-
-
-DEFAULT_SHOP_ITEMS = [
-    {
-        "sku": "frame-neon-red",
-        "name": "Neon Red Frame",
-        "description": "Contour premium pour votre avatar.",
-        "category": "cosmetic",
-        "item_type": "avatar_frame",
-        "rarity": "epic",
-        "price_soft": 180,
-        "price_hard": 0,
-        "asset": "ring-red",
-        "is_featured": True,
-    },
-    {
-        "sku": "frame-cyber-blue",
-        "name": "Cyber Blue Frame",
-        "description": "Cadre e-sport bleu electrique.",
-        "category": "cosmetic",
-        "item_type": "avatar_frame",
-        "rarity": "rare",
-        "price_soft": 130,
-        "price_hard": 0,
-        "asset": "ring-cyan",
-        "is_featured": True,
-    },
-    {
-        "sku": "title-arena-king",
-        "name": "Titre Arena King",
-        "description": "Affiche un titre legendaire sur votre profil.",
-        "category": "cosmetic",
-        "item_type": "title",
-        "rarity": "legendary",
-        "price_soft": 0,
-        "price_hard": 12,
-        "asset": "title-gold",
-        "is_featured": True,
-    },
-    {
-        "sku": "title-first-blood",
-        "name": "Titre First Blood",
-        "description": "Titre agressif pour les joueurs offensifs.",
-        "category": "cosmetic",
-        "item_type": "title",
-        "rarity": "rare",
-        "price_soft": 90,
-        "price_hard": 0,
-        "asset": "title-red",
-        "is_featured": False,
-    },
-]
-
-DEFAULT_STORE_PACKS = [
-    {
-        "sku": "starter-drop",
-        "name": "Starter Drop",
-        "description": "Petit pack pour debuter la boutique.",
-        "soft_currency": 300,
-        "hard_currency": 20,
-        "bonus_percent": 0,
-        "price_cents": 499,
-        "is_featured": True,
-    },
-    {
-        "sku": "competitor-bundle",
-        "name": "Competitor Bundle",
-        "description": "Recharge de saison pour joueurs reguliers.",
-        "soft_currency": 750,
-        "hard_currency": 55,
-        "bonus_percent": 10,
-        "price_cents": 1199,
-        "is_featured": True,
-    },
-    {
-        "sku": "creator-whale",
-        "name": "Creator Whale",
-        "description": "Pack XXL pour personnaliser tout le compte.",
-        "soft_currency": 1800,
-        "hard_currency": 150,
-        "bonus_percent": 25,
-        "price_cents": 2499,
-        "is_featured": False,
-    },
-]
-
 
 def get_or_create_economy_settings(db):
     settings = db.query(EconomySettings).first()
@@ -104,20 +19,6 @@ def get_or_create_economy_settings(db):
         db.commit()
         db.refresh(settings)
     return settings
-
-
-def ensure_store_seed_data(db):
-    get_or_create_economy_settings(db)
-
-    if db.query(ShopItem).count() == 0:
-        for payload in DEFAULT_SHOP_ITEMS:
-            db.add(ShopItem(**payload))
-
-    if db.query(StorePack).count() == 0:
-        for payload in DEFAULT_STORE_PACKS:
-            db.add(StorePack(**payload))
-
-    db.commit()
 
 
 def serialize_economy_settings(settings: EconomySettings):
@@ -130,6 +31,25 @@ def serialize_economy_settings(settings: EconomySettings):
         "premium_pass_price_hard": settings.premium_pass_price_hard,
         "stripe_enabled": settings.stripe_enabled,
         "paypal_enabled": settings.paypal_enabled,
+    }
+
+
+def serialize_season_pass_tier(tier: SeasonPassTier):
+    return {
+        "id": tier.id,
+        "tier": tier.tier,
+        "xp_required": tier.xp_required,
+        "free_reward": {
+            "type": tier.free_reward_type,
+            "amount": tier.free_reward_amount,
+            "sku": tier.free_reward_sku,
+        },
+        "premium_reward": {
+            "type": tier.premium_reward_type,
+            "amount": tier.premium_reward_amount,
+            "sku": tier.premium_reward_sku,
+        },
+        "is_active": tier.is_active,
     }
 
 
@@ -212,14 +132,14 @@ def get_or_create_season_pass(db, user: User, settings: EconomySettings):
     return season_pass
 
 
-def get_season_pass_tiers(tier_xp: int = 120):
-    return [
-        {"tier": 1, "xp_required": 0, "free_reward": {"type": "soft_currency", "amount": 60}, "premium_reward": {"type": "item", "sku": "frame-cyber-blue"}},
-        {"tier": 2, "xp_required": tier_xp, "free_reward": {"type": "soft_currency", "amount": 90}, "premium_reward": {"type": "hard_currency", "amount": 5}},
-        {"tier": 3, "xp_required": tier_xp * 2, "free_reward": {"type": "item", "sku": "title-first-blood"}, "premium_reward": {"type": "soft_currency", "amount": 140}},
-        {"tier": 4, "xp_required": tier_xp * 3, "free_reward": {"type": "hard_currency", "amount": 4}, "premium_reward": {"type": "item", "sku": "frame-neon-red"}},
-        {"tier": 5, "xp_required": tier_xp * 4, "free_reward": {"type": "soft_currency", "amount": 150}, "premium_reward": {"type": "item", "sku": "title-arena-king"}},
-    ]
+def get_season_pass_tiers(db):
+    tiers = (
+        db.query(SeasonPassTier)
+        .filter(SeasonPassTier.is_active.is_(True))
+        .order_by(SeasonPassTier.tier.asc())
+        .all()
+    )
+    return [serialize_season_pass_tier(tier) for tier in tiers]
 
 
 def parse_claimed_tiers(raw: str):
