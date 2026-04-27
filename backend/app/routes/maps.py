@@ -17,8 +17,44 @@ from app.models.map_version import MapVersion
 from app.models.map_vote import MapVote
 from app.models.notification import Notification
 from app.models.user import User
+from fastapi import Body
+
 
 router = APIRouter(prefix="/maps")
+
+
+
+
+@router.post("/unity/save/{map_id}")
+def save_map_unity(map_id: int, data: dict = Body(...), db: Session = Depends(get_db)):
+    game_map = db.query(Map).filter(Map.id == map_id).first()
+
+    if not game_map:
+        raise HTTPException(status_code=404, detail="Map not found")
+
+    # stocker JSON Unity
+    game_map.content_url = json.dumps(data)
+    game_map.last_updated_at = datetime.utcnow()
+
+    db.commit()
+
+    return {"message": "Map JSON saved"}
+
+
+@router.get("/unity/load/{map_id}")
+def load_map_unity(map_id: int, db: Session = Depends(get_db)):
+    game_map = db.query(Map).filter(Map.id == map_id).first()
+
+    if not game_map:
+        raise HTTPException(status_code=404, detail="Map not found")
+
+    if not game_map.content_url:
+        return {"objects": []}
+
+    try:
+        return json.loads(game_map.content_url)
+    except:
+        return {"objects": []}
 
 
 class CreateMapPayload(BaseModel):
@@ -463,6 +499,19 @@ def creator_stats(db: Session = Depends(get_db)):
         for pseudo, stats in sorted(creators.items(), key=lambda item: (item[1]["popularity"], item[1]["tests_count"]), reverse=True)
     ]
     return payload[:10]
+@router.get("/{map_id}")
+def get_map_by_id(
+    map_id: int,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
+   
+    game_map = db.query(Map).filter(Map.id == map_id, Map.hidden.is_(False)).first()
+
+    if not game_map:
+        raise HTTPException(status_code=404, detail="Map not found")
+
+    return _serialize_map(game_map, db, current_user)
 
 
 @router.get("/")
@@ -511,3 +560,6 @@ def get_maps(
         items.sort(key=lambda item: item["popularity"], reverse=True)
 
     return items
+
+
+

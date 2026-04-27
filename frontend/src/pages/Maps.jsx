@@ -195,15 +195,56 @@ export default function Maps() {
   };
 
   const handleTestMap = async (mapId) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    toast.error("Tu dois être connecté pour tester une map.");
+    return;
+  }
+
+  
+  const deeplink = `gamedash://testmap?map_id=${mapId}&token=${encodeURIComponent(token)}`;
+
+  
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.src = deeplink;
+  document.body.appendChild(iframe);
+
+  
+  setTimeout(() => {
+    document.body.removeChild(iframe);
+  }, 3000);
+
+  toast(
+    (t) => (
+      <div className="flex flex-col gap-2">
+        <p className="font-semibold text-white">Ouverture de Unity...</p>
+        <p className="text-sm text-slate-300">
+          Si Unity ne s'ouvre pas, clique sur <strong>"Ouvrir GameDash"</strong> dans la
+          fenêtre qui s'est affichée.
+        </p>
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="mt-1 rounded-lg bg-cyan-500 px-3 py-1 text-sm font-semibold text-slate-950"
+        >
+          OK
+        </button>
+      </div>
+    ),
+    { duration: 6000 }
+  );
+
+  
+  setTimeout(async () => {
     try {
-      await testMap(mapId, 240 + Math.floor(Math.random() * 240), 0.55 + Math.random() * 0.45);
-      toast.success("Test de map enregistre.");
-      await load();
-    } catch (error) {
-      console.error(error);
-      toast.error("Impossible d'enregistrer ce test.");
+      await testMap(mapId, 300, 1.0);
+      await load(); // refresh les stats de la map
+    } catch (err) {
+      console.warn("Impossible d'enregistrer le test API :", err);
     }
-  };
+  }, 4000);
+};
 
   const handleReportMap = async (mapId) => {
     try {
