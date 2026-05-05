@@ -4,44 +4,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-/// <summary>
-/// MapTestController — contrôleur de la scène "MapTest".
-///
-/// Cette scène est chargée quand un joueur clique "Tester" sur le site web.
-/// Elle :
-///   1. Lit les données statiques PendingMap / PendingMapId / PendingMapTitle
-///   2. Reconstruit la grille dans la scène 2D à partir du JSON de la map
-///   3. Lance une session de jeu de 3 minutes sur cette map
-///   4. À la fin, envoie POST /maps/test avec les stats réelles (durée, complétion)
-///   5. Affiche un écran de résumé puis retourne au Lobby (ou ferme Unity)
-///
-/// ─── Setup dans Unity ──────────────────────────────────────────────────────
-/// Scène "MapTest" :
-///   - Empty GameObject → attacher MapTestController
-///   - Canvas avec :
-///       TMP_Text  mapTitleText
-///       TMP_Text  timerText
-///       TMP_Text  statusText
-///       Button    exitButton  ("Quitter le test")
-///       Panel     summaryPanel (désactivé par défaut)
-///         TMP_Text summaryText
-///         Button   closeSummaryButton
-///   - Prefabs assignés :
-///       wallPrefab     → Sprite carré marron, Layer "Default"
-///       floorPrefab    → Sprite carré vert, Layer "Default"
-///       spawnP1Prefab  → Sprite cercle bleu
-///       spawnP2Prefab  → Sprite cercle rouge
-///       powerupPrefab  → Sprite étoile jaune
-/// ─────────────────────────────────────────────────────────────────────────
-/// </summary>
+
 public class MapTestController : MonoBehaviour
 {
-    // ── Données partagées entre scènes (static) ──────────────────
     public static MapData   PendingMap;
     public static int       PendingMapId   = -1;
     public static string    PendingMapTitle = "Map sans titre";
 
-    // ── Prefabs de tuiles ────────────────────────────────────────
     [Header("Prefabs de tuiles")]
     public GameObject wallPrefab;
     public GameObject floorPrefab;
@@ -52,7 +21,6 @@ public class MapTestController : MonoBehaviour
     [Header("Taille d'une tuile (unités Unity)")]
     public float tileSize = 1f;
 
-    // ── UI ───────────────────────────────────────────────────────
     [Header("UI")]
     public TMP_Text   mapTitleText;
     public TMP_Text   timerText;
@@ -62,19 +30,15 @@ public class MapTestController : MonoBehaviour
     public TMP_Text   summaryText;
     public Button     closeSummaryButton;
 
-    // ── Durée du test (secondes) ─────────────────────────────────
     [Header("Durée du test")]
     public float testDuration = 180f;   // 3 minutes
 
-    // ── État interne ─────────────────────────────────────────────
     private float  _elapsed     = 0f;
     private bool   _testEnded   = false;
 
     private GameObject _mapRoot;                // parent de tous les tiles
 
-    // ──────────────────────────────────────────────────────────────
-    // Init
-    // ──────────────────────────────────────────────────────────────
+     
 
     void Start()
     {
@@ -129,7 +93,9 @@ public class MapTestController : MonoBehaviour
         // Centre la caméra sur la map
         float centerX = (data.width  * tileSize) / 2f;
         float centerY = (data.height * tileSize) / 2f;
+        Camera.main.orthographicSize = Mathf.Max(data.width, data.height) * tileSize / 2f;
         Camera.main.transform.position = new Vector3(centerX, centerY, -10f);
+        Camera.main.backgroundColor = new Color(0.15f, 0.15f, 0.20f);
 
         // Instancie chaque tuile
         foreach (var cell in data.cells)
@@ -148,21 +114,34 @@ public class MapTestController : MonoBehaviour
     }
 
     private GameObject GetPrefabForType(int type)
+{
+    Color[] colors = new Color[]
     {
-        return type switch
-        {
-            1 => wallPrefab,
-            2 => floorPrefab,
-            3 => spawnP1Prefab,
-            4 => spawnP2Prefab,
-            5 => powerupPrefab,
-            _ => null
-        };
-    }
+        Color.clear,
+        new Color(0.55f, 0.35f, 0.15f), // mur marron
+        new Color(0.20f, 0.75f, 0.25f), // sol vert
+        new Color(0.10f, 0.55f, 0.95f), // spawn J1 bleu
+        new Color(0.95f, 0.20f, 0.20f), // spawn J2 rouge
+        new Color(1.00f, 0.90f, 0.00f), // powerup jaune
+    };
 
-    // ──────────────────────────────────────────────────────────────
-    // Map de démo (si aucune map reçue)
-    // ──────────────────────────────────────────────────────────────
+    if (type <= 0 || type >= colors.Length) return null;
+
+    var go = new GameObject($"tile_t{type}");
+    var sr = go.AddComponent<SpriteRenderer>();
+    sr.color = colors[type];
+
+    var tex = new Texture2D(32, 32);
+    var pixels = new Color[32 * 32];
+    for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
+    tex.SetPixels(pixels);
+    tex.Apply();
+    sr.sprite = Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
+    go.transform.localScale = new Vector3(tileSize, tileSize, 1f);
+
+    return go;
+}
+
 
     private void BuildDemoMap()
     {

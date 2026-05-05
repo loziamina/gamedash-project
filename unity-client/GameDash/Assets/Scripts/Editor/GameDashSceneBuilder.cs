@@ -7,27 +7,11 @@ using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// GameDashSceneBuilder
-/// ─────────────────────────────────────────────────────────────────────────────
-/// Menu Unity : GameDash ▶ Build All Scenes
-///
-/// Crée automatiquement les 7 scènes du projet avec toute l'UI câblée :
-///   Login / Lobby / Queue / Game / Results / MapEditor / MapTest
-///
-/// Prérequis :
-///   1. TextMeshPro importé (Window → TextMeshPro → Import TMP Essentials)
-///   2. Tous les scripts C# compilés sans erreur
-///   3. Lancer depuis le menu GameDash → Build All Scenes
-///
-/// Ce script se place dans Assets/Editor/ — il n'est pas inclus dans le build.
-/// ─────────────────────────────────────────────────────────────────────────────
-/// </summary>
+
 public static class GameDashSceneBuilder
 {
     private const string SCENES_PATH = "Assets/Scenes";
 
-    // ── Couleurs UI du thème GameDash ──────────────────────────────
     private static readonly Color BG_DARK       = new Color(0.05f, 0.07f, 0.12f, 1f);
     private static readonly Color CYAN          = new Color(0.00f, 0.84f, 1.00f, 1f);
     private static readonly Color CYAN_DIM      = new Color(0.00f, 0.84f, 1.00f, 0.15f);
