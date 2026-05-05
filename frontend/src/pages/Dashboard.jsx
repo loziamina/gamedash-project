@@ -123,6 +123,16 @@ export default function Dashboard() {
         mode,
         elo: typeof value === "object" ? value.elo : value,
       }));
+  
+  const handleOpenMapEditor = () => {
+  const token = localStorage.getItem("token");
+  if (!token) { alert("Tu dois être connecté."); return; }
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  iframe.src = `gamedash://editor?token=${encodeURIComponent(token)}`;
+  document.body.appendChild(iframe);
+  setTimeout(() => document.body.removeChild(iframe), 3000);
+};
 
   return (
     <PageWrapper>
@@ -316,6 +326,12 @@ export default function Dashboard() {
           >
             Community Maps
           </button>
+          <button
+              onClick={handleOpenMapEditor}
+               className="rounded-xl bg-green-500 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-green-500/20 active:scale-95"
+          >
+            Créer une Map
+        </button>
           {currentUser?.role === "admin" && (
             <button
               onClick={() => window.location.href = "/admin"}

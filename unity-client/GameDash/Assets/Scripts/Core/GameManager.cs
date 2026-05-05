@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     public enum GameState { Login, Lobby, InQueue, InGame, Results, MapEditor }
-    public GameState CurrentState { get; private set; } = GameState.Login;
+    public GameState CurrentState { get; private set; } = GameState.Lobby;
 
     public int    CurrentMatchId    { get; private set; }
     public int    CurrentOpponentId { get; private set; }

@@ -1,26 +1,21 @@
 using System;
 using System.Collections;
-using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// DeeplinkHandler — à attacher sur le GameObject "GameDash" (même que ApiManager/GameManager).
+/// DeeplinkHandler — gère 2 deeplinks :
+///   gamedash://testmap?map_id=42&token=xxx  → ouvre MapTest avec la map
+///   gamedash://editor?token=xxx             → ouvre MapEditor directement
 ///
-/// Rôle :
-///   1. Au démarrage, lit les arguments de ligne de commande pour détecter
-///      un deeplink gamedash://testmap?map_id=42&token=xxx
-///   2. Si un deeplink est détecté :
-///      - Stocke le token JWT dans ApiManager
-///      - Récupère le profil joueur (/auth/me)
-///      - Télécharge les données de la map (/maps/{id})
-///      - Charge la scène MapTest avec la map
-///   3. Sinon, lance le flux normal (scène Login)
+/// À attacher sur le GameObject "GameDash" (même que ApiManager + GameManager).
 /// </summary>
 public class DeeplinkHandler : MonoBehaviour
 {
-    [Header("Scène de test de map")]
-    public string mapTestScene = "MapTest";
+    [Header("Scènes")]
+    public string mapTestScene   = "MapTest";
+    public string mapEditorScene = "MapEditor";
+    public string loginScene     = "Login";
 
     void Start()
     {
@@ -37,113 +32,134 @@ public class DeeplinkHandler : MonoBehaviour
 
         foreach (string arg in args)
         {
-            // Cherche un argument du type : gamedash://testmap?map_id=42&token=eyJhbG...
+            // Deeplink test de map
             if (arg.StartsWith("gamedash://testmap", StringComparison.OrdinalIgnoreCase))
             {
-                Debug.Log("[Deeplink] Détecté : " + arg);
+                Debug.Log("[Deeplink] TestMap détecté : " + arg);
                 HandleTestMapDeeplink(arg);
+                return;
+            }
+
+            // Deeplink éditeur de maps
+            if (arg.StartsWith("gamedash://editor", StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.Log("[Deeplink] Editor détecté : " + arg);
+                HandleEditorDeeplink(arg);
                 return;
             }
         }
 
-        // Aucun deeplink → flux normal
+        // Aucun deeplink → flux normal (Login)
         Debug.Log("[Deeplink] Aucun deeplink, démarrage normal.");
     }
 
+    // ──────────────────────────────────────────────────────────────
+    // Deeplink : tester une map
+    // gamedash://testmap?map_id=42&token=xxx
+    // ──────────────────────────────────────────────────────────────
+
     private void HandleTestMapDeeplink(string url)
     {
-        // Parse les query params depuis gamedash://testmap?map_id=42&token=xxx
         var query = ParseQuery(url);
 
         if (!query.TryGetValue("map_id", out string mapIdStr) ||
             !int.TryParse(mapIdStr, out int mapId))
         {
-            Debug.LogError("[Deeplink] map_id manquant ou invalide dans : " + url);
-            SceneManager.LoadScene("Login");
+            Debug.LogError("[Deeplink] map_id manquant dans : " + url);
+            Application.Quit();
             return;
         }
 
         if (!query.TryGetValue("token", out string token) || string.IsNullOrEmpty(token))
         {
             Debug.LogError("[Deeplink] token manquant dans : " + url);
-            SceneManager.LoadScene("Login");
+            Application.Quit();
             return;
         }
 
-        Debug.Log($"[Deeplink] map_id={mapId}, token présent.");
-
-        // Injecter le token dans ApiManager et PlayerPrefs
         ApiManager.Instance.InjectToken(token);
-
-        // Charger le profil puis la map
-        StartCoroutine(LoadProfileAndMap(mapId));
+        StartCoroutine(LoadProfileThenMap(mapId));
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // Chargement du profil + map
-    // ──────────────────────────────────────────────────────────────
-
-    private IEnumerator LoadProfileAndMap(int mapId)
+    private IEnumerator LoadProfileThenMap(int mapId)
     {
-        // 1. Récupérer le profil joueur
-        bool profileOk = false;
+        // 1. Charger le profil
+        bool ok = false;
         yield return ApiManager.Instance.GetMe(
-            (profile) =>
-            {
-                GameManager.Instance.SetLocalPlayer(profile);
-                profileOk = true;
-                Debug.Log($"[Deeplink] Profil chargé : {profile.pseudo}");
-            },
-            (err) => Debug.LogError("[Deeplink] Impossible de charger le profil : " + err)
+            (profile) => { GameManager.Instance.SetLocalPlayer(profile); ok = true; },
+            (err)     => Debug.LogError("[Deeplink] GetMe échoué : " + err)
         );
 
-        if (!profileOk)
-        {
-            Debug.LogError("[Deeplink] Profil introuvable, retour au login.");
-            SceneManager.LoadScene("Login");
-            yield break;
-        }
+        if (!ok) { Application.Quit(); yield break; }
 
-        // 2. Télécharger les données de la map
+        // 2. Charger la map
         yield return ApiManager.Instance.GetMap(mapId,
-            (mapResponse) =>
+            (mapResp) =>
             {
-                Debug.Log($"[Deeplink] Map reçue : {mapResponse.title} (content_url={mapResponse.content_url?.Length} chars)");
-
-                // 3. Décoder le JSON base64 de la map
                 MapData mapData = null;
                 try
                 {
-                    if (!string.IsNullOrEmpty(mapResponse.content_url))
-                        mapData = MapData.FromBase64(mapResponse.content_url);
+                    if (!string.IsNullOrEmpty(mapResp.content_url))
+                        mapData = MapData.FromBase64(mapResp.content_url);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning("[Deeplink] Impossible de décoder content_url : " + e.Message);
+                    Debug.LogWarning("[Deeplink] Décodage map échoué : " + e.Message);
                 }
 
-                // 4. Passer les données au MapTestController et charger la scène
-                MapTestController.PendingMap    = mapData;
-                MapTestController.PendingMapId  = mapId;
-                MapTestController.PendingMapTitle = mapResponse.title;
+                MapTestController.PendingMap      = mapData;
+                MapTestController.PendingMapId    = mapId;
+                MapTestController.PendingMapTitle = mapResp.title;
 
-                SceneManager.LoadScene("MapTest");
+                SceneManager.LoadScene(mapTestScene);
             },
             (err) =>
             {
-                Debug.LogError("[Deeplink] Impossible de charger la map : " + err);
-                SceneManager.LoadScene("Login");
+                Debug.LogError("[Deeplink] GetMap échoué : " + err);
+                Application.Quit();
             }
         );
     }
 
     // ──────────────────────────────────────────────────────────────
-    // Utilitaire : parse les query params d'une URI
+    // Deeplink : ouvrir l'éditeur de maps
+    // gamedash://editor?token=xxx
     // ──────────────────────────────────────────────────────────────
 
+    private void HandleEditorDeeplink(string url)
+    {
+        var query = ParseQuery(url);
+
+        if (!query.TryGetValue("token", out string token) || string.IsNullOrEmpty(token))
+        {
+            Debug.LogError("[Deeplink] token manquant dans : " + url);
+            Application.Quit();
+            return;
+        }
+
+        ApiManager.Instance.InjectToken(token);
+        StartCoroutine(LoadProfileThenEditor());
+    }
+
+    private IEnumerator LoadProfileThenEditor()
+    {
+        bool ok = false;
+        yield return ApiManager.Instance.GetMe(
+            (profile) => { GameManager.Instance.SetLocalPlayer(profile); ok = true; },
+            (err)     => Debug.LogError("[Deeplink] GetMe échoué : " + err)
+        );
+
+        if (!ok) { Application.Quit(); yield break; }
+
+        Debug.Log($"[Deeplink] Ouverture éditeur pour : {GameManager.Instance.LocalPlayer.pseudo}");
+        SceneManager.LoadScene(mapEditorScene);
+    }
+
+   
     private static System.Collections.Generic.Dictionary<string, string> ParseQuery(string url)
     {
-        var result = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var result = new System.Collections.Generic.Dictionary<string, string>(
+            StringComparer.OrdinalIgnoreCase);
 
         int qIdx = url.IndexOf('?');
         if (qIdx < 0) return result;
