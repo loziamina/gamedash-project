@@ -20,7 +20,7 @@ Projet realise par :
 
 - Amina LOZI
 - Mariya ABBAKIL
-- Anas MAHHO
+- Anas MAHHOU
 
 ## Fonctionnalites principales
 
