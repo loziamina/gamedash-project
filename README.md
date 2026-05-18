@@ -38,6 +38,11 @@ Bloc fonctionnel porte par Amina:
 - dashboard joueur avec analytics competitives
 - admin panel avec monitoring, sanctions, reglages MMR/rangs/recompenses
 - module maps / UGC avec versions, votes, favoris, commentaires, tests, signalements
+- pass de saison
+- inventaire
+- equiper des objets
+- journal des transactions
+- reglages economie cote admin
 
 ## Axes complementaires du cahier des charges
 
@@ -50,21 +55,33 @@ Bloc fonctionnel porte par Anas :
 - notifications in-app
 - saisons competitives
 - saisons / recompenses createurs
+- AWS publication
 
 ### Boutique / Economie
 
 Bloc fonctionnel porte par Mariya:
 
-- soft currency
-- hard currency
-- boutique
-- packs
-- pass de saison
-- inventaire
-- equiper des objets
-- journal des transactions
-- paiement simule Stripe / PayPal
-- reglages economie cote admin
+- Création du jeu réel sous Unity
+- Développement de la base du jeu dans Unity.
+- Mise en place de l’environnement jouable.
+- Intégration des mécaniques principales du jeu.
+- Préparation du projet Unity pour être connecté au reste de la plateforme.
+- Création des maps
+- Conception et création des maps dans Unity.
+- Mise en place des éléments nécessaires à la navigation dans les maps.
+- Gestion des paramètres propres à chaque map.
+- Génération d’un fichier JSON contenant les informations de la map créée.
+- Création des objets
+- Création des objets utilisables dans le jeu.
+- Intégration des objets dans l’environnement Unity.
+- Préparation des objets pour qu’ils puissent être équipés ou utilisés par les joueurs.
+- Association des objets aux fonctionnalités d’inventaire et d’équipement.
+- Mise en place du lien entre le frontend et Unity
+- Connexion entre l’interface frontend et le projet Unity.
+- Transmission des données entre le frontend et Unity.
+- Récupération du JSON généré lors de la création d’une map.
+- Utilisation de ce JSON dans la partie Community Maps pour permettre au joueur de recréer sa propre map avec les paramètres définis.
+
 
 ## Stack technique
 
