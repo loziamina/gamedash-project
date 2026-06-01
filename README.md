@@ -20,7 +20,7 @@ Projet realise par :
 
 - Amina LOZI
 - Mariya ABBAKIL
-- Anas MAHHO
+- Anas MAHHOU
 
 ## Fonctionnalites principales
 
@@ -51,6 +51,7 @@ Bloc fonctionnel porte par Anas :
 - notifications in-app
 - saisons competitives
 - saisons / recompenses createurs
+- AWS publication
 
 ### Unity
 
