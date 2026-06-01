@@ -38,11 +38,7 @@ Bloc fonctionnel porte par Amina:
 - dashboard joueur avec analytics competitives
 - admin panel avec monitoring, sanctions, reglages MMR/rangs/recompenses
 - module maps / UGC avec versions, votes, favoris, commentaires, tests, signalements
-- pass de saison
-- inventaire
-- equiper des objets
-- journal des transactions
-- reglages economie cote admin
+- boutique / economie virtuelle / inventaire
 
 ## Axes complementaires du cahier des charges
 
@@ -57,7 +53,7 @@ Bloc fonctionnel porte par Anas :
 - saisons / recompenses createurs
 - AWS publication
 
-### Boutique / Economie
+### Unity
 
 Bloc fonctionnel porte par Mariya:
 
@@ -81,6 +77,11 @@ Bloc fonctionnel porte par Mariya:
 - Transmission des données entre le frontend et Unity.
 - Récupération du JSON généré lors de la création d’une map.
 - Utilisation de ce JSON dans la partie Community Maps pour permettre au joueur de recréer sa propre map avec les paramètres définis.
+- pass de saison
+- inventaire
+- equiper des objets
+- journal des transactions
+- reglages economie cote admin
 
 
 ## Stack technique
@@ -114,7 +115,7 @@ Depuis le dossier `backend` :
 
 ```bash
 cd backend
-python -m venv venv
+python -m venv venv or py -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
