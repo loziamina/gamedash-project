@@ -5,14 +5,16 @@ import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
 import { getMe } from "../services/api";
 import {
-  addMapVersion,
   commentMap,
   createMap,
+  deleteMap,
   getCreatorStats,
   getMaps,
+  getMyMaps,
   reportMap,
   testMap,
   toggleFavoriteMap,
+  updateMap,
   voteMap,
 } from "../services/maps";
 
@@ -40,6 +42,8 @@ const filesToDataUrls = async (files) =>
 
 export default function Maps() {
   const [maps, setMaps] = useState([]);
+  const [myMaps, setMyMaps] = useState([]);
+  const [showMyMaps, setShowMyMaps] = useState(false);
   const [creatorStats, setCreatorStats] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [title, setTitle] = useState("");
@@ -51,7 +55,6 @@ export default function Maps() {
   const [selectedTag, setSelectedTag] = useState("");
   const [sort, setSort] = useState("trending");
   const [author, setAuthor] = useState("");
-  const [versionNotes, setVersionNotes] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [reportDrafts, setReportDrafts] = useState({});
   const [mapContent, setMapContent] = useState("");
@@ -62,6 +65,7 @@ export default function Maps() {
   const [gridHeight, setGridHeight] = useState(12);
   const [grid, setGrid] = useState(null); // will be 2D array
   const [selectedTile, setSelectedTile] = useState(1);
+  const [isPainting, setIsPainting] = useState(false);
 
   const TileColors = ["#222222","#8b5a2b","#2e7d32","#0b79e6","#e11d48","#f59e0b"];
   const TileNames = ["Vide","Mur","Sol","Spawn J1","Spawn J2","Powerup"];
@@ -83,6 +87,18 @@ export default function Maps() {
     g[y][x] = selectedTile;
     setGrid(g);
   };
+
+  useEffect(() => {
+    const stopPainting = () => setIsPainting(false);
+
+    window.addEventListener("mouseup", stopPainting);
+    window.addEventListener("mouseleave", stopPainting);
+
+    return () => {
+      window.removeEventListener("mouseup", stopPainting);
+      window.removeEventListener("mouseleave", stopPainting);
+    };
+  }, []);
 
   const clearGrid = () => {
     initGrid(gridWidth, gridHeight);
@@ -180,8 +196,27 @@ export default function Maps() {
   const [mapScreenshots, setMapScreenshots] = useState([]);
 
   useEffect(() => {
-    getMe().then(setCurrentUser).catch((error) => console.error(error));
+    const loadUser = async () => {
+      try {
+        const user = await getMe();
+        setCurrentUser(user);
+        await loadMyMaps();
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    loadUser();
   }, []);
+
+  const loadMyMaps = async () => {
+    try {
+      const mapsData = await getMyMaps();
+      setMyMaps(mapsData);
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de charger tes maps.");
+    }
+  };
 
   useEffect(() => {
     load();
@@ -250,7 +285,7 @@ export default function Maps() {
         let parsed = null;
         try {
           parsed = JSON.parse(text);
-        } catch (e) {
+        } catch {
           throw new Error("Fichier JSON invalide");
         }
 
@@ -334,21 +369,6 @@ export default function Maps() {
     }
   };
 
-  const handleAddVersion = async (mapId) => {
-    try {
-      // If the creator uploaded map content/screenshots in the form, include them in the new version
-      const notes = versionNotes[mapId] || "Update";
-      const payloadContent = generatedMapContent || mapContent || null;
-      await addMapVersion(mapId, notes, payloadContent, mapScreenshots || []);
-      toast.success("Nouvelle version ajoutee.");
-      setVersionNotes((prev) => ({ ...prev, [mapId]: "" }));
-      await load();
-    } catch (error) {
-      console.error(error);
-      toast.error("Impossible d'ajouter la version.");
-    }
-  };
-
   const handleComment = async (mapId) => {
     try {
       await commentMap(mapId, commentDrafts[mapId] || "");
@@ -425,13 +445,42 @@ export default function Maps() {
     }
   };
 
+  const handleDeleteMap = async (mapId) => {
+    if (window.confirm("Confirmation: Supprimer cette map ?")) {
+      try {
+        await deleteMap(mapId);
+        toast.success("Map supprimee.");
+        await loadMyMaps();
+        await load();
+      } catch (error) {
+        console.error(error);
+        toast.error("Impossible de supprimer la map.");
+      }
+    }
+  };
+
+  const handleUpdateMapTitle = async (mapId) => {
+    const newTitle = prompt("Nouveau titre :", myMaps.find((m) => m.id === mapId)?.title || "");
+    if (newTitle && newTitle.trim()) {
+      try {
+        await updateMap(mapId, { title: newTitle.trim() });
+        toast.success("Titre mis a jour.");
+        await loadMyMaps();
+        await load();
+      } catch (error) {
+        console.error(error);
+        toast.error("Impossible de mettre a jour le titre.");
+      }
+    }
+  };
+
   return (
     <PageWrapper>
       <div className="min-h-screen p-6 text-white">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl text-purple-400 drop-shadow-[0_0_20px_rgba(192,132,252,0.7)]">
-              Community Maps Hub
+              EloVerse Community Hub
             </h1>
             <p className="mt-2 max-w-3xl text-slate-400">
               Explore les maps communautaires, publie du vrai contenu, suis les tests et
@@ -503,7 +552,51 @@ export default function Maps() {
                 className="rounded-2xl border border-cyan-500/20 bg-white/5 px-4 py-3 text-white outline-none"
               />
             </div>
+            <button
+              type="button"
+              onClick={() => setShowMyMaps(!showMyMaps)}
+              className="col-span-full rounded-2xl border border-pink-500/30 bg-pink-500/10 px-4 py-3 font-semibold text-pink-300 hover:border-pink-400 hover:bg-pink-500/20"
+            >
+              {showMyMaps ? "Masquer mes maps" : "Afficher mes maps"} ({myMaps.length})
+            </button>
           </div>
+
+          {showMyMaps && (
+            <div className="dashboard-card rounded-[2rem] p-6">
+              <p className="text-xs uppercase tracking-[0.35em] text-pink-300/70">Creator</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">Mes maps publiees</h2>
+              <div className="mt-5 space-y-3">
+                {myMaps.length > 0 ? (
+                  myMaps.map((map) => (
+                    <div key={map.id} className="flex items-center justify-between gap-4 rounded-2xl border border-pink-500/20 bg-pink-500/5 p-4">
+                      <div className="flex-1">
+                        <p className="font-bold text-white">{map.title}</p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          Statut: {map.status} | Tests: {map.tests_count} | Score: {map.score}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdateMapTitle(map.id)}
+                          className="rounded-lg bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
+                        >
+                          Renommer
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMap(map.id)}
+                          className="rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-400"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">Aucune map creee pour le moment.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="dashboard-card rounded-[2rem] p-6">
             <p className="text-xs uppercase tracking-[0.35em] text-pink-300/70">Top creators</p>
@@ -607,7 +700,22 @@ export default function Maps() {
                         {Array.from({ length: gridWidth }).map((__, x) => {
                           const val = grid?.[y]?.[x] ?? 0;
                           return (
-                            <button key={`${x}-${y}`} type="button" onClick={() => paintCell(x, y)} style={{ width: 24, height: 24, background: TileColors[val], borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }} />
+                            <button
+                              key={`${x}-${y}`}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                setIsPainting(true);
+                                paintCell(x, y);
+                              }}
+                              onMouseEnter={() => {
+                                if (isPainting) {
+                                  paintCell(x, y);
+                                }
+                              }}
+                              onMouseUp={() => setIsPainting(false)}
+                              style={{ width: 24, height: 24, background: TileColors[val], borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}
+                            />
                           );
                         })}
                       </React.Fragment>
@@ -639,6 +747,11 @@ export default function Maps() {
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
                     <h2 className="text-3xl font-bold text-white">{map.title}</h2>
+                    {currentUser && map.author.id === currentUser.id && (
+                      <span className="rounded-full border border-pink-400/30 bg-pink-500/10 px-3 py-1 text-xs uppercase tracking-[0.25em] text-pink-300 font-bold">
+                        [MA MAP]
+                      </span>
+                    )}
                     <span className="rounded-full border border-purple-400/30 bg-purple-500/10 px-3 py-1 text-xs uppercase tracking-[0.25em] text-purple-300">
                       {map.status}
                     </span>
@@ -731,20 +844,6 @@ export default function Maps() {
                       <button onClick={() => handleFavorite(map.id)} className={`rounded-2xl px-4 py-3 text-xl transition ${map.is_favorited ? "bg-yellow-400 text-slate-950" : "bg-yellow-400/20 hover:scale-105"}`}>*</button>
                       <button onClick={() => handleTestMap(map.id)} className="rounded-2xl bg-cyan-500/20 px-4 py-3 text-sm font-semibold transition hover:scale-105">Test</button>
                     </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-cyan-500/20 bg-white/5 p-5">
-                    <p className="mb-3 text-sm uppercase tracking-[0.25em] text-slate-400">Ajouter une version</p>
-                    <textarea
-                      value={versionNotes[map.id] || ""}
-                      onChange={(e) => setVersionNotes((prev) => ({ ...prev, [map.id]: e.target.value }))}
-                      rows={3}
-                      placeholder="Notes de version"
-                      className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-white outline-none"
-                    />
-                    <button onClick={() => handleAddVersion(map.id)} className="mt-3 w-full rounded-2xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]">
-                      Publier la version
-                    </button>
                   </div>
 
                   <div className="rounded-3xl border border-pink-500/20 bg-white/5 p-5">

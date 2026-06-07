@@ -39,6 +39,19 @@ export default function Matchmaking() {
   const [selectedMode, setSelectedMode] = useState("ranked");
   const [settings, setSettings] = useState(null);
   const [overview, setOverview] = useState(null);
+  const [queuedMode, setQueuedMode] = useState(null);
+
+  const findQueuedMode = (overviewData, userId) => {
+    if (!overviewData || !userId) {
+      return null;
+    }
+
+    return (
+      MODES.find((mode) =>
+        (overviewData.queue?.[mode.value] || []).some((entry) => entry.user_id === userId)
+      )?.value || null
+    );
+  };
 
   const redirectToGame = (matchPayload) => {
     setMatch(matchPayload);
@@ -47,41 +60,68 @@ export default function Matchmaking() {
   };
 
   const refreshData = async () => {
+    // load user if available, but don't fail the whole flow if not logged
+    let me = null;
+    let activeQueueMode = null;
     try {
-      const [me, settingsData, overviewData, currentMatchData] = await Promise.all([
-        getMe(),
+      me = await getMe();
+      setCurrentUser(me);
+    } catch {
+      // not authenticated or user fetch failed
+      setCurrentUser(null);
+    }
+
+    // load settings and overview (public)
+    try {
+      const [settingsData, overviewData] = await Promise.all([
         getMatchmakingSettings(),
         getMatchmakingOverview(),
-        getCurrentMatch(),
       ]);
-      setCurrentUser(me);
       setSettings(settingsData.settings);
       setOverview(overviewData);
 
-      if (currentMatchData?.match) {
-        setStatus("Match en cours");
-        redirectToGame(currentMatchData.match);
-        return;
+      activeQueueMode = findQueuedMode(overviewData, me?.id);
+      setQueuedMode(activeQueueMode);
+      if (activeQueueMode) {
+        setSelectedMode(activeQueueMode);
       }
+    } catch (err) {
+      console.error("Failed to load matchmaking settings/overview", err);
+      toast.error("Impossible de charger les paramètres du matchmaking.");
+      return;
+    }
 
-      setStatus(
-        me.player_status === "queue"
+    // if user is logged, check current match
+    if (me) {
+      try {
+        const currentMatchData = await getCurrentMatch();
+        if (currentMatchData?.match) {
+          setStatus("Match en cours");
+          redirectToGame(currentMatchData.match);
+          return;
+        }
+      } catch (err) {
+        console.warn("Unable to fetch current match", err);
+      }
+    }
+
+    setStatus(
+      me
+        ? me.player_status === "queue" || activeQueueMode
           ? "En file d'attente"
           : me.player_status === "in_game"
             ? "Match en cours"
             : "Pret a lancer une recherche"
-      );
-    } catch (error) {
-      console.error(error);
-      toast.error("Impossible de charger le matchmaking.");
-    }
+        : "Pret a lancer une recherche"
+    );
   };
 
   useEffect(() => {
     refreshData();
 
     const token = localStorage.getItem("token");
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/matchmaking?token=${token}`);
+    const wsUrl = token ? `ws://127.0.0.1:8000/ws/matchmaking?token=${token}` : `ws://127.0.0.1:8000/ws/matchmaking`;
+    const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -100,24 +140,25 @@ export default function Matchmaking() {
   }, []);
 
   useEffect(() => {
-    if (currentUser?.player_status !== "queue") {
+    if (currentUser?.player_status !== "queue" && !queuedMode) {
       return undefined;
     }
 
     const interval = setInterval(async () => {
       try {
-        const res = await createMatch(selectedMode);
+        const modeToMatch = queuedMode || selectedMode;
+        const res = await createMatch(modeToMatch);
 
         if (res?.match_id) {
           const matchPayload = {
             match_id: res.match_id,
             opponent:
               currentUser?.id === res.players?.[0] ? res.players?.[1] : res.players?.[0],
-            mode: res.mode || selectedMode,
+            mode: res.mode || modeToMatch,
             status: "in_game",
           };
 
-          toast.success(`Match trouve en mode ${res.mode || selectedMode} !`);
+          toast.success(`Match trouve en mode ${res.mode || modeToMatch} !`);
           redirectToGame(matchPayload);
         } else {
           await refreshData();
@@ -128,7 +169,7 @@ export default function Matchmaking() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [currentUser?.player_status, currentUser?.id, selectedMode]);
+  }, [currentUser?.player_status, currentUser?.id, queuedMode, selectedMode]);
 
   const handleJoin = async () => {
     try {
@@ -153,6 +194,7 @@ export default function Matchmaking() {
       setCurrentUser((prev) =>
         prev ? { ...prev, player_status: res.player_status || "queue" } : prev
       );
+      setQueuedMode(res.mode || selectedMode);
       toast.success(res.message || "Recherche lancee");
       await refreshData();
     } catch (error) {
@@ -170,6 +212,7 @@ export default function Matchmaking() {
       setCurrentUser((prev) =>
         prev ? { ...prev, player_status: res.player_status || "online" } : prev
       );
+      setQueuedMode(null);
       toast.success(res.message || "File quittee");
       await refreshData();
     } catch (error) {
@@ -191,7 +234,7 @@ export default function Matchmaking() {
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-              Matchmaking
+              EloVerse Matchmaking
             </h1>
             <p className="mt-2 max-w-3xl text-slate-400">
               Choisis une file, surveille l'etat des joueurs et lance une recherche

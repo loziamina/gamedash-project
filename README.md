@@ -37,7 +37,7 @@ Bloc fonctionnel porte par Amina:
 - progression compte : XP, niveau, monnaie virtuelle, quetes
 - dashboard joueur avec analytics competitives
 - admin panel avec monitoring, sanctions, reglages MMR/rangs/recompenses
-- module maps / UGC avec versions, votes, favoris, commentaires, tests, signalements
+- module maps / UGC avec votes, favoris, commentaires, tests Unity et signalements
 
 ## Axes complementaires du cahier des charges
 
@@ -50,6 +50,41 @@ Bloc fonctionnel porte par Anas :
 - notifications in-app
 - saisons competitives
 - saisons / recompenses createurs
+- choix de l'architecture AWS adaptee :
+  - backend : EC2 / ECS / Fargate / Lambda
+  - base de donnees : RDS PostgreSQL ou MySQL
+  - frontend : S3 + CloudFront
+  - stockage de fichiers / maps : S3
+- configuration de l'infrastructure reseau :
+  - VPC, sous-reseaux publics / prives
+  - security groups pour l'API, la base de donnees et les services
+- preparation de la base de donnees :
+  - creation de l'instance RDS
+  - configuration des acces
+  - execution des migrations SQL / SQLAlchemy
+- gestion des secrets et de la configuration :
+  - AWS Secrets Manager ou Parameter Store
+  - variables d'environnement pour le backend et le frontend
+- deploiement du backend :
+  - containerisation de l'application ou packaging de l'API
+  - lancement sur ECS / Fargate ou EC2
+  - configuration d'un load balancer si necessaire
+- deploiement du frontend :
+  - build du site React
+  - publication dans S3
+  - distribution avec CloudFront
+- configuration du domaine et du HTTPS :
+  - Route 53 pour le DNS
+  - certificat ACM pour TLS
+- mise en place CI/CD :
+  - pipeline GitHub Actions / CodePipeline
+  - build, tests et deploiement automatique
+- logs et monitoring :
+  - CloudWatch logs et metriques
+  - alarmes de disponibilite et d'erreurs
+- tests en staging :
+  - verification des flux map / test, matchmaking et profil
+  - validation ELO / MMR / coins / victoires avant production
 
 ### Boutique / Economie
 
@@ -70,6 +105,7 @@ Bloc fonctionnel porte par Mariya:
 
 - Frontend : React, Vite, Tailwind CSS, Recharts, Framer Motion
 - Backend : FastAPI, SQLAlchemy, PostgreSQL, WebSocket, JWT
+- Client jeu : Unity, scenes `Game` et `MapTest`
 - Auth : JWT, Google OAuth, SMTP Gmail
 
 ## Structure du projet
@@ -125,6 +161,20 @@ Le frontend demarre par defaut sur :
 http://localhost:5173
 ```
 
+### 4. Lancer Unity via deeplink
+
+Le front peut ouvrir Unity avec le protocole `gamedash://` :
+
+- matchmaking : `gamedash://match` ouvre la scene `Game`
+- test de map communautaire : `gamedash://testmap` ouvre la scene `MapTest`
+
+Pour l'activer :
+
+1. build le projet Unity `unity-client/GameDash`
+2. genere un `GameDash.exe`
+3. modifie `unity-setup/register_deeplink.bat` avec le chemin du `.exe`
+4. execute le script en administrateur
+
 ## Variables d'environnement
 
 Le backend utilise notamment :
@@ -162,7 +212,9 @@ Parcours conseille pour une demo :
 1. creer un compte ou se connecter avec Google
 2. completer le profil joueur
 3. lancer un match en `ranked` puis en `fun`
-4. consulter le dashboard, l'historique et la courbe ELO
-5. creer une map communautaire avec captures
-6. tester, voter et commenter la map
-7. ouvrir l'admin panel pour voir les KPIs, la moderation et les reglages
+4. ouvrir Unity sur la scene `Game`
+5. consulter le dashboard, l'historique et la courbe ELO
+6. creer une map communautaire avec captures
+7. tester la map dans Unity avec `MapTest`
+8. voter et commenter la map
+9. ouvrir l'admin panel pour voir les KPIs, la moderation et les reglages

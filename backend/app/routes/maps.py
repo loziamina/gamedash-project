@@ -505,7 +505,7 @@ def report_map(payload: MapReportPayload, user: User = Depends(get_current_user)
 def get_my_maps(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     my_maps = (
         db.query(Map)
-        .filter(Map.author_id == user.id)
+        .filter(Map.author_id == user.id, Map.hidden.is_(False))
         .order_by(Map.last_updated_at.desc(), Map.created_at.desc())
         .all()
     )

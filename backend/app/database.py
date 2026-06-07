@@ -7,12 +7,11 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-print("DB URL =", DATABASE_URL)
+SQL_ECHO = os.getenv("SQL_ECHO", "false").lower() == "true"
 
 engine = create_engine(
     DATABASE_URL,
-    echo=True,
+    echo=SQL_ECHO,
     pool_pre_ping=True,
     connect_args={"options": "-c client_encoding=utf8"},
 )
@@ -69,6 +68,7 @@ def ensure_schema():
     if "matches" in inspector.get_table_names():
         match_columns = {column["name"] for column in inspector.get_columns("matches")}
         match_alter_statements = {
+            "map_id": "ALTER TABLE matches ADD COLUMN map_id INTEGER",
             "mode": "ALTER TABLE matches ADD COLUMN mode VARCHAR NOT NULL DEFAULT 'ranked'",
             "finished_at": "ALTER TABLE matches ADD COLUMN finished_at TIMESTAMP NULL",
             "duration_seconds": "ALTER TABLE matches ADD COLUMN duration_seconds INTEGER",

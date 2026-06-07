@@ -102,7 +102,7 @@ public class GameManager : MonoBehaviour
             yield return ApiManager.Instance.GetCurrentMatch(
                 (resp) =>
                 {
-                    if (resp.in_match && resp.match != null)
+                    if (resp.match != null && resp.match.match_id > 0)
                     {
                         CurrentMatchId    = resp.match.match_id;
                         CurrentOpponentId = resp.match.opponent;
@@ -114,6 +114,15 @@ public class GameManager : MonoBehaviour
                 (err) => Debug.LogWarning("PollForMatch: " + err)
             );
         }
+    }
+
+    public void StartMatchFromDeeplink(int matchId, int opponentId, string mode, int mapId)
+    {
+        CurrentMatchId = matchId;
+        CurrentOpponentId = opponentId;
+        CurrentMode = string.IsNullOrEmpty(mode) ? "ranked" : mode;
+        CurrentMapId = mapId;
+        StartGame();
     }
 
     private void StartGame()

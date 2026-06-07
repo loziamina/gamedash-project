@@ -109,11 +109,31 @@ Ce n'est pas un systeme Elo complet multi-contrainte, mais un compromis pedagogi
    - creation d'un `Match`
    - passage des deux joueurs en `in_game`
    - envoi d'un evenement WebSocket `match_found`
+   - redirection frontend vers `/game`
+   - ouverture possible du client Unity via `gamedash://match`
 5. a la fin du match :
    - mise a jour du resultat
    - mise a jour de l'ELO
    - passage des deux joueurs en `online`
    - nettoyage des entrees `matched`
+
+## Integration Unity
+
+Le matchmaking lance le gameplay Unity par defaut. Il ne selectionne pas une map communautaire.
+
+Flux :
+
+1. deux joueurs sont apparies
+2. le frontend stocke les informations du match
+3. la page `/game` propose d'ouvrir Unity
+4. le deeplink `gamedash://match` transmet `match_id`, `opponent`, `mode` et le token JWT
+5. Unity charge le profil joueur puis ouvre la scene `Game`
+
+Les maps communautaires utilisent un flux distinct :
+
+- `gamedash://testmap?map_id=<id>&token=<jwt>`
+- scene Unity cible : `MapTest`
+- objectif : tester une map publiee dans Community Maps
 
 ## Endpoints principaux
 
