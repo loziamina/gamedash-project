@@ -476,10 +476,10 @@ export default function Maps() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen p-6 text-white">
-        <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="min-h-screen px-4 py-6 text-white sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-4xl text-purple-400 drop-shadow-[0_0_20px_rgba(192,132,252,0.7)]">
+            <h1 className="text-3xl text-purple-300 drop-shadow-[0_0_20px_rgba(192,132,252,0.35)] sm:text-4xl">
               EloVerse Community Hub
             </h1>
             <p className="mt-2 max-w-3xl text-slate-400">
@@ -492,28 +492,28 @@ export default function Maps() {
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="dashboard-card rounded-[2rem] p-6">
-            <div className="mb-5 flex items-center justify-between">
+          <div className="dashboard-card rounded-2xl p-5 sm:p-6">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-purple-300/70">Discover</p>
+                <p className="tiny-label text-purple-300/70">Discover</p>
                 <h2 className="mt-2 text-2xl font-bold text-white">Map Browser</h2>
               </div>
-              <div className="rounded-full border border-purple-400/20 bg-purple-500/10 px-4 py-2 text-sm text-purple-200">
+              <div className="w-fit rounded-full border border-purple-400/20 bg-purple-500/10 px-4 py-2 text-sm text-purple-200">
                 {maps.length} maps visibles
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Recherche"
-                className="rounded-2xl border border-cyan-500/20 bg-white/5 px-4 py-3 text-white outline-none"
+                className="form-control"
               />
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="rounded-2xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-white outline-none"
+                className="form-control"
               >
                 <option value="">Tous les statuts</option>
                 {STATUS_OPTIONS.map((option) => (
@@ -525,7 +525,7 @@ export default function Maps() {
               <select
                 value={selectedTag}
                 onChange={(e) => setSelectedTag(e.target.value)}
-                className="rounded-2xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-white outline-none"
+                className="form-control"
               >
                 <option value="">Tous les tags</option>
                 {availableTags.map((tag) => (
@@ -537,7 +537,7 @@ export default function Maps() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="rounded-2xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-white outline-none"
+                className="form-control"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -549,42 +549,42 @@ export default function Maps() {
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Auteur"
-                className="rounded-2xl border border-cyan-500/20 bg-white/5 px-4 py-3 text-white outline-none"
+                className="form-control"
               />
             </div>
             <button
               type="button"
               onClick={() => setShowMyMaps(!showMyMaps)}
-              className="col-span-full rounded-2xl border border-pink-500/30 bg-pink-500/10 px-4 py-3 font-semibold text-pink-300 hover:border-pink-400 hover:bg-pink-500/20"
+              className="mt-4 rounded-xl border border-pink-500/30 bg-pink-500/10 px-4 py-3 font-semibold text-pink-300 transition hover:-translate-y-0.5 hover:border-pink-400 hover:bg-pink-500/20"
             >
               {showMyMaps ? "Masquer mes maps" : "Afficher mes maps"} ({myMaps.length})
             </button>
           </div>
 
           {showMyMaps && (
-            <div className="dashboard-card rounded-[2rem] p-6">
-              <p className="text-xs uppercase tracking-[0.35em] text-pink-300/70">Creator</p>
+            <div className="dashboard-card rounded-2xl p-5 sm:p-6">
+              <p className="tiny-label text-pink-300/70">Creator</p>
               <h2 className="mt-2 text-2xl font-bold text-white">Mes maps publiees</h2>
               <div className="mt-5 space-y-3">
                 {myMaps.length > 0 ? (
                   myMaps.map((map) => (
-                    <div key={map.id} className="flex items-center justify-between gap-4 rounded-2xl border border-pink-500/20 bg-pink-500/5 p-4">
+                    <div key={map.id} className="soft-panel flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex-1">
                         <p className="font-bold text-white">{map.title}</p>
                         <p className="mt-1 text-sm text-slate-400">
                           Statut: {map.status} | Tests: {map.tests_count} | Score: {map.score}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => handleUpdateMapTitle(map.id)}
-                          className="rounded-lg bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
+                          className="nav-button nav-button-cyan min-h-0 px-3 py-2 text-sm"
                         >
                           Renommer
                         </button>
                         <button
                           onClick={() => handleDeleteMap(map.id)}
-                          className="rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white hover:bg-red-400"
+                          className="nav-button nav-button-red min-h-0 px-3 py-2 text-sm"
                         >
                           Supprimer
                         </button>
@@ -598,12 +598,12 @@ export default function Maps() {
             </div>
           )}
 
-          <div className="dashboard-card rounded-[2rem] p-6">
-            <p className="text-xs uppercase tracking-[0.35em] text-pink-300/70">Top creators</p>
+          <div className="dashboard-card rounded-2xl p-5 sm:p-6">
+            <p className="tiny-label text-pink-300/70">Top creators</p>
             <h2 className="mt-2 text-2xl font-bold text-white">Createurs a suivre</h2>
             <div className="mt-5 space-y-3">
               {creatorStats.slice(0, 4).map((creator) => (
-                <div key={creator.creator} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div key={creator.creator} className="soft-panel p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-lg font-bold text-white">{creator.creator}</p>
@@ -622,8 +622,8 @@ export default function Maps() {
           </div>
         </div>
 
-        <form onSubmit={handleCreateMap} className="mb-8 dashboard-card rounded-[2rem] p-6">
-          <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">Creator Studio</p>
+        <form onSubmit={handleCreateMap} className="mb-8 dashboard-card rounded-2xl p-5 sm:p-6">
+          <p className="tiny-label">Creator Studio</p>
           <h2 className="mt-2 text-2xl font-bold text-white">Publier une nouvelle map</h2>
           <div className="mt-5 grid grid-cols-1 gap-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -631,13 +631,13 @@ export default function Maps() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Titre de la map"
-                className="rounded-2xl border border-cyan-500/20 bg-white/5 px-4 py-3 text-white outline-none"
+                className="form-control"
                 required
               />
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="rounded-2xl border border-cyan-500/20 bg-slate-950 px-4 py-3 text-white outline-none"
+                className="form-control"
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -651,7 +651,7 @@ export default function Maps() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Description de l'experience"
               rows={4}
-              className="rounded-2xl border border-cyan-500/20 bg-white/5 px-4 py-3 text-white outline-none"
+              className="form-control"
               required
             />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -659,38 +659,38 @@ export default function Maps() {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="tags: duel, arena, cyber"
-                className="rounded-2xl border border-cyan-500/20 bg-white/5 px-4 py-3 text-white outline-none"
+                className="form-control"
               />
-              <label className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+              <label className="soft-panel px-4 py-3 text-sm text-slate-300">
                 Captures d'ecran
                 <input type="file" accept="image/*" multiple onChange={handleScreenshotUpload} className="mt-2 block w-full text-xs" />
               </label>
-              <label className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+              <label className="soft-panel px-4 py-3 text-sm text-slate-300">
                 Contenu map
                 <input type="file" onChange={handleMapContentUpload} className="mt-2 block w-full text-xs" />
-                <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={() => setShowEditor((s) => !s)} className="rounded-xl bg-purple-500 px-3 py-1 text-sm font-semibold">{showEditor ? 'Fermer l\'editeur' : 'Ouvrir editeur de grille'}</button>
-                  <button type="button" onClick={() => { setMapContent(''); setGeneratedMapContent(''); toast.success('Contenu supprime.'); }} className="rounded-xl bg-red-500 px-3 py-1 text-sm font-semibold">Supprimer contenu</button>
-                  <button type="button" onClick={importExample} className="rounded-xl bg-indigo-500 px-3 py-1 text-sm font-semibold">Importer exemple</button>
-                  <label className="ml-2 flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={publishAuto} onChange={(e)=>setPublishAuto(e.target.checked)} /> Publier automatiquement</label>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setShowEditor((s) => !s)} className="nav-button nav-button-purple min-h-0 px-3 py-2 text-sm">{showEditor ? 'Fermer l\'editeur' : 'Ouvrir editeur de grille'}</button>
+                  <button type="button" onClick={() => { setMapContent(''); setGeneratedMapContent(''); toast.success('Contenu supprime.'); }} className="nav-button nav-button-red min-h-0 px-3 py-2 text-sm">Supprimer contenu</button>
+                  <button type="button" onClick={importExample} className="nav-button nav-button-cyan min-h-0 px-3 py-2 text-sm">Importer exemple</button>
+                  <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300"><input type="checkbox" checked={publishAuto} onChange={(e)=>setPublishAuto(e.target.checked)} /> Publier automatiquement</label>
                 </div>
               </label>
             </div>
 
             {showEditor && (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950 p-4">
-                <div className="flex items-center gap-3 mb-3">
+              <div className="mt-4 rounded-2xl border border-cyan-400/15 bg-slate-950/70 p-4">
+                <div className="mb-3 flex flex-wrap items-center gap-3">
                   <label className="text-sm text-slate-300">Width</label>
-                  <input type="number" value={gridWidth} onChange={(e) => setGridWidth(Number(e.target.value))} className="w-20 rounded px-2 text-black" />
+                  <input type="number" value={gridWidth} onChange={(e) => setGridWidth(Number(e.target.value))} className="form-control w-24 py-2" />
                   <label className="text-sm text-slate-300">Height</label>
-                  <input type="number" value={gridHeight} onChange={(e) => setGridHeight(Number(e.target.value))} className="w-20 rounded px-2 text-black" />
-                  <button type="button" onClick={() => initGrid(gridWidth, gridHeight)} className="rounded-xl bg-cyan-500 px-3 py-1 text-sm font-semibold">Init</button>
-                  <button type="button" onClick={clearGrid} className="rounded-xl bg-yellow-500 px-3 py-1 text-sm font-semibold">Clear</button>
-                  <button type="button" onClick={setEditorAsContent} className="ml-auto rounded-xl bg-emerald-500 px-3 py-1 text-sm font-semibold">Generer et utiliser</button>
+                  <input type="number" value={gridHeight} onChange={(e) => setGridHeight(Number(e.target.value))} className="form-control w-24 py-2" />
+                  <button type="button" onClick={() => initGrid(gridWidth, gridHeight)} className="nav-button nav-button-cyan min-h-0 px-3 py-2 text-sm">Init</button>
+                  <button type="button" onClick={clearGrid} className="nav-button nav-button-amber min-h-0 px-3 py-2 text-sm">Clear</button>
+                  <button type="button" onClick={setEditorAsContent} className="nav-button border-emerald-400/20 bg-emerald-500/90 text-slate-950 min-h-0 px-3 py-2 text-sm sm:ml-auto">Generer et utiliser</button>
                 </div>
-                <div className="mb-2 flex gap-2">
+                <div className="mb-3 flex flex-wrap gap-2">
                   {TileNames.map((n, idx) => (
-                    <button key={n} type="button" onClick={() => setSelectedTile(idx)} className={`px-3 py-1 rounded ${selectedTile===idx? 'ring-2 ring-white':''}`} style={{background: TileColors[idx], color: '#fff'}}>{n}</button>
+                    <button key={n} type="button" onClick={() => setSelectedTile(idx)} className={`rounded-lg border border-white/10 px-3 py-2 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 ${selectedTile===idx? 'ring-2 ring-white':''}`} style={{background: TileColors[idx], color: '#fff'}}>{n}</button>
                   ))}
                 </div>
                 <div className="overflow-auto" style={{ maxWidth: '100%', maxHeight: 400 }}>
@@ -733,7 +733,7 @@ export default function Maps() {
             )}
             <button
               type="submit"
-              className="rounded-2xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-400 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/30"
+              className="nav-button border-cyan-300/20 bg-cyan-400 text-slate-950 hover:shadow-cyan-500/20"
             >
               Publier la map
             </button>
@@ -742,7 +742,7 @@ export default function Maps() {
 
         <div className="space-y-6">
           {maps.map((map) => (
-            <div key={map.id} className="dashboard-card overflow-hidden rounded-[2rem] p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20">
+            <div key={map.id} className="dashboard-card overflow-hidden rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 sm:p-6">
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">

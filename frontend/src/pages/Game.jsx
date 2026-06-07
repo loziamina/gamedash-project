@@ -153,11 +153,11 @@ export default function Game() {
 
   return (
     <PageWrapper>
-      <div className="flex min-h-screen flex-col items-center justify-center text-white">
-        <div className="absolute left-0 top-0 w-full p-6">
-          <div className="flex items-start justify-between gap-4">
+      <div className="flex min-h-screen flex-col items-center justify-center px-4 py-28 text-white sm:px-6">
+        <div className="absolute left-0 top-0 w-full px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-4xl text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+              <h1 className="text-3xl text-cyan-300 drop-shadow-[0_0_20px_rgba(0,212,255,0.35)] sm:text-4xl">
                 GAME SESSION
               </h1>
               <BackToDashboardButton className="mt-4" />
@@ -167,26 +167,26 @@ export default function Game() {
         </div>
 
         {opponent && currentUser && (
-          <>
-            <div className="mb-4 text-sm text-slate-400">Match ID: {matchId}</div>
-            <div className="mb-8 text-center text-sm text-slate-400">
+          <div className="dashboard-card w-full max-w-4xl rounded-2xl p-5 text-center sm:p-8">
+            <div className="mb-3 text-sm text-slate-400">Match ID: {matchId}</div>
+            <div className="mb-8 text-sm text-slate-400">
               <p>Mode: {mode || "-"}</p>
               <p>
                 Scene Unity: {mapId ? `Game avec map #${mapId}` : "Game par defaut"}
               </p>
             </div>
 
-            <div className="mb-10 flex items-center gap-16">
+            <div className="mb-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-10">
               <div className="text-center">
-                <div className="h-32 w-32 rounded-full bg-cyan-500 animate-pulse" />
+                <div className="mx-auto h-24 w-24 rounded-2xl bg-cyan-500/90 shadow-2xl shadow-cyan-500/20 animate-pulse sm:h-32 sm:w-32" />
                 <p className="mt-4 text-xl">YOU</p>
                 <p className="text-sm text-slate-400">Player {currentUser.id}</p>
               </div>
 
-              <div className="text-5xl animate-bounce">VS</div>
+              <div className="text-3xl font-black text-white/90 sm:text-5xl">VS</div>
 
               <div className="text-center">
-                <div className="h-32 w-32 rounded-full bg-pink-500 animate-pulse" />
+                <div className="mx-auto h-24 w-24 rounded-2xl bg-pink-500/90 shadow-2xl shadow-pink-500/20 animate-pulse sm:h-32 sm:w-32" />
                 <p className="mt-4 text-xl">Player {opponent}</p>
               </div>
             </div>
@@ -202,7 +202,7 @@ export default function Game() {
                       map_id: mapId,
                     }, true)
                   }
-                  className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95"
+                  className="nav-button nav-button-cyan"
                 >
                   {unityLaunchAttempted ? "Relancer Unity" : "Ouvrir Unity"}
                 </button>
@@ -210,7 +210,7 @@ export default function Game() {
                 <button
                   onClick={handleWin}
                   disabled={isSubmitting}
-                  className="rounded-xl bg-green-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-green-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="nav-button border-emerald-400/20 bg-emerald-500/90 text-slate-950 hover:shadow-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Gagner
                 </button>
@@ -218,7 +218,7 @@ export default function Game() {
                 <button
                   onClick={handleLose}
                   disabled={isSubmitting}
-                  className="rounded-xl bg-red-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-red-500/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="nav-button nav-button-red disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Perdre
                 </button>
@@ -238,7 +238,7 @@ export default function Game() {
                 </h2>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {(!opponent || !currentUser) && <p>{status}</p>}

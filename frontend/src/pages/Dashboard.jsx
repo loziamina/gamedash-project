@@ -144,10 +144,10 @@ export default function Dashboard() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen p-6 text-white">
-        <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="min-h-screen px-4 py-6 text-white sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
+            <h1 className="text-3xl font-bold text-cyan-300 drop-shadow-[0_0_20px_rgba(0,212,255,0.35)] sm:text-4xl">
               EloVerse Dashboard
             </h1>
             <p className="mt-2 max-w-3xl text-slate-400">
@@ -157,30 +157,71 @@ export default function Dashboard() {
           <UserMenu user={currentUser} />
         </div>
 
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+          <button
+            onClick={() => window.location.href = "/matchmaking"}
+            className="nav-button nav-button-purple"
+          >
+            Go Matchmaking
+          </button>
+          <button
+            onClick={() => window.location.href = "/history"}
+            className="nav-button nav-button-cyan"
+          >
+            Voir historique
+          </button>
+          <button
+            onClick={() => window.location.href = "/elo"}
+            className="nav-button nav-button-pink"
+          >
+            Voir evolution ELO
+          </button>
+          <button
+            onClick={() => window.location.href = "/store"}
+            className="nav-button nav-button-amber"
+          >
+            Boutique
+          </button>
+          <button
+            onClick={() => window.location.href = "/maps"}
+            className="nav-button nav-button-purple"
+          >
+            Community Maps
+          </button>
+          {currentUser?.role === "admin" && (
+            <button
+              onClick={() => window.location.href = "/admin"}
+              className="nav-button nav-button-red"
+            >
+              Admin Panel
+            </button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
-          <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20">
-            <h2 className="mb-2 text-xl">Status</h2>
+          <div className="dashboard-card rounded-2xl p-5 transition-all duration-200">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Status</h2>
             <p>{status}</p>
             <p className="mt-2 text-sm text-slate-400">Etat joueur: {playerStatus}</p>
           </div>
 
-          <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20">
-            <h2 className="mb-2 text-xl">Players Online</h2>
+          <div className="dashboard-card rounded-2xl p-5 transition-all duration-200">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Players Online</h2>
             <p className="text-3xl text-green-400">{players}</p>
           </div>
 
-          <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-pink-500/20">
-            <h2 className="mb-2 text-xl">Ranked MMR</h2>
+          <div className="dashboard-card rounded-2xl p-5 transition-all duration-200">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Ranked MMR</h2>
             <p className="text-3xl text-pink-400">{elo}</p>
           </div>
 
-          <div className="dashboard-card rounded-2xl p-6 text-center transition-all duration-200 hover:shadow-2xl hover:shadow-yellow-500/20">
-            <h2 className="mb-2 text-xl">Rank</h2>
+          <div className="dashboard-card rounded-2xl p-5 text-center transition-all duration-200">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Rank</h2>
             <p className="text-3xl font-bold text-yellow-300">{rank || "Unranked"}</p>
           </div>
 
-          <div className="dashboard-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20">
-            <h2 className="mb-2 text-xl">Level</h2>
+          <div className="dashboard-card rounded-2xl p-5 transition-all duration-200">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Level</h2>
             <p className="text-3xl text-purple-300">{summary?.level ?? currentUser?.level ?? 1}</p>
             <div className="mt-3 h-2 rounded-full bg-white/10">
               <div
@@ -303,47 +344,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-4">
-          <button
-            onClick={() => window.location.href = "/matchmaking"}
-            className="rounded-xl bg-purple-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/20 active:scale-95"
-          >
-            Go Matchmaking
-          </button>
-          <button
-            onClick={() => window.location.href = "/history"}
-            className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95"
-          >
-            Voir historique
-          </button>
-          <button
-            onClick={() => window.location.href = "/elo"}
-            className="rounded-xl bg-pink-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-pink-500/20 active:scale-95"
-          >
-            Voir evolution ELO
-          </button>
-          <button
-            onClick={() => window.location.href = "/store"}
-            className="rounded-xl bg-amber-400 px-6 py-3 font-semibold text-slate-950 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-amber-500/20 active:scale-95"
-          >
-            Boutique
-          </button>
-          <button
-            onClick={() => window.location.href = "/maps"}
-            className="rounded-xl bg-purple-600 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/20 active:scale-95"
-          >
-            Community Maps
-          </button>
-          {/* 'Créer une Map' button removed — publishing moved to Community Maps hub */}
-          {currentUser?.role === "admin" && (
-            <button
-              onClick={() => window.location.href = "/admin"}
-              className="rounded-xl bg-red-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-red-500/20 active:scale-95"
-            >
-              Admin Panel
-            </button>
-          )}
-        </div>
       </div>
     </PageWrapper>
   );
