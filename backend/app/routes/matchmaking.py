@@ -187,7 +187,12 @@ def evaluate_pair(db: Session, first_player: QueuePlayer, second_player: QueuePl
     }
 
 
-async def try_create_match_for_mode(db: Session, mode: str, settings: MatchmakingSettings):
+async def try_create_match_for_mode(
+    db: Session,
+    mode: str,
+    settings: MatchmakingSettings,
+    anchor_queue: QueuePlayer | None = None,
+):
     players = (
         db.query(QueuePlayer)
         .filter(QueuePlayer.status == "waiting", QueuePlayer.mode == mode)
@@ -202,6 +207,9 @@ async def try_create_match_for_mode(db: Session, mode: str, settings: Matchmakin
 
     for index, first_player in enumerate(players):
         for second_player in players[index + 1 :]:
+            if anchor_queue and anchor_queue.id not in {first_player.id, second_player.id}:
+                continue
+
             candidate = evaluate_pair(db, first_player, second_player, settings)
 
             if not candidate or not candidate["can_match"]:
@@ -222,18 +230,6 @@ async def try_create_match_for_mode(db: Session, mode: str, settings: Matchmakin
         mode=mode,
         status="ongoing",
     )
-    # choose a default map for the match: prefer featured published maps, else most tested
-    try:
-        candidate_map = (
-            db.query(Map)
-            .filter(Map.hidden.is_(False), Map.status == "published")
-            .order_by(Map.featured.desc(), Map.tests_count.desc())
-            .first()
-        )
-        if candidate_map:
-            match.map_id = candidate_map.id
-    except Exception:
-        pass
     db.add(match)
 
     first_queue.status = "matched"
@@ -429,14 +425,19 @@ async def join_queue(payload: JoinQueuePayload, user: User = Depends(get_current
 
     existing = db.query(QueuePlayer).filter(QueuePlayer.user_id == user.id, QueuePlayer.status == "waiting").first()
     if existing:
+        created_match = await try_create_match_for_mode(db, existing.mode, settings, existing)
+        if created_match:
+            return created_match
+
         return {"message": "Already in queue", "mode": existing.mode, "player_status": user.player_status}
 
     player = QueuePlayer(user_id=user.id, mode=mode)
     db.add(player)
     user.player_status = "queue"
     db.commit()
+    db.refresh(player)
 
-    created_match = await try_create_match_for_mode(db, mode, settings)
+    created_match = await try_create_match_for_mode(db, mode, settings, player)
     if created_match:
         return created_match
 
@@ -469,7 +470,20 @@ async def create_match(payload: JoinQueuePayload, user: User = Depends(get_curre
     if require_mode not in ALLOWED_MODES:
         raise HTTPException(status_code=400, detail="Invalid matchmaking mode")
 
-    result = await try_create_match_for_mode(db, require_mode, settings)
+    current_queue = (
+        db.query(QueuePlayer)
+        .filter(
+            QueuePlayer.user_id == user.id,
+            QueuePlayer.status == "waiting",
+            QueuePlayer.mode == require_mode,
+        )
+        .first()
+    )
+
+    if not current_queue:
+        return {"message": "Player is not waiting in this queue", "mode": require_mode}
+
+    result = await try_create_match_for_mode(db, require_mode, settings, current_queue)
     if not result:
         return {"message": "No match found", "mode": require_mode}
     return result
@@ -613,6 +627,52 @@ async def finish_match(match_id: int, winner_id: int, user: User = Depends(get_c
     xp_gained = 0
     coins_gained = 0
     reward_settings = get_reward_settings(db)
+
+    # Apply ELO and progression to both players
+    try:
+        player1 = db.query(User).filter(User.id == match.player1_id).first()
+        player2 = db.query(User).filter(User.id == match.player2_id).first()
+        
+        is_player1_winner = winner_id == match.player1_id
+        
+        # Calculate ELO changes
+        base_elo_change = 32  # standard chess elo change
+        player1_elo_change = base_elo_change if is_player1_winner else -base_elo_change
+        player2_elo_change = -base_elo_change if is_player1_winner else base_elo_change
+        
+        # Apply progression to both players
+        if player1:
+            xp1 = reward_settings.win_xp if is_player1_winner else reward_settings.loss_xp
+            coins1 = reward_settings.win_currency if is_player1_winner else reward_settings.loss_currency
+            apply_progression(player1, xp_gain=xp1, currency_gain=coins1, elo_change=player1_elo_change, mode=match.mode)
+            match.player1_elo_change = player1_elo_change
+            match.player1_xp_gain = xp1
+            
+            db.add(VirtualTransaction(
+                user_id=match.player1_id,
+                amount=coins1,
+                currency_type="soft",
+                source="match_reward" if is_player1_winner else "match_loss",
+            ))
+        
+        if player2:
+            xp2 = reward_settings.win_xp if not is_player1_winner else reward_settings.loss_xp
+            coins2 = reward_settings.win_currency if not is_player1_winner else reward_settings.loss_currency
+            apply_progression(player2, xp_gain=xp2, currency_gain=coins2, elo_change=player2_elo_change, mode=match.mode)
+            match.player2_elo_change = player2_elo_change
+            match.player2_xp_gain = xp2
+            
+            db.add(VirtualTransaction(
+                user_id=match.player2_id,
+                amount=coins2,
+                currency_type="soft",
+                source="match_reward" if not is_player1_winner else "match_loss",
+            ))
+        
+        db.commit()
+    except Exception as e:
+        print(f"Error applying progression: {e}")
+        pass
 
     if user.id == match.player1_id:
         mmr_change = match.player1_elo_change or 0

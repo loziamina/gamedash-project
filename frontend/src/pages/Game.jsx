@@ -14,6 +14,57 @@ export default function Game() {
   const [status, setStatus] = useState("Chargement...");
   const [winner, setWinner] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mode, setMode] = useState(null);
+  const [mapId, setMapId] = useState(null);
+  const [unityLaunchAttempted, setUnityLaunchAttempted] = useState(false);
+
+  const buildUnityMatchDeeplink = (matchPayload) => {
+    const token = localStorage.getItem("token");
+
+    if (!token || !matchPayload?.match_id) {
+      return null;
+    }
+
+    const params = new URLSearchParams({
+      match_id: String(matchPayload.match_id),
+      opponent: String(matchPayload.opponent || ""),
+      mode: matchPayload.mode || "ranked",
+      token,
+    });
+
+    if (matchPayload.map_id) {
+      params.set("map_id", String(matchPayload.map_id));
+    }
+
+    return `gamedash://match?${params.toString()}`;
+  };
+
+  const launchUnityMatch = (matchPayload, direct = false) => {
+    const deeplink = buildUnityMatchDeeplink(matchPayload);
+
+    if (!deeplink) {
+      return false;
+    }
+
+    if (direct) {
+      window.location.href = deeplink;
+      setUnityLaunchAttempted(true);
+      return true;
+    }
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = deeplink;
+    document.body.appendChild(iframe);
+
+    setTimeout(() => {
+      iframe.remove();
+    }, 3000);
+
+    setUnityLaunchAttempted(true);
+    toast.success("Ouverture de Unity avec la map du match...");
+    return true;
+  };
 
   useEffect(() => {
     const loadGameData = async () => {
@@ -29,8 +80,11 @@ export default function Game() {
         if (data) {
           setMatchId(data.match_id ?? null);
           setOpponent(data.opponent ?? null);
+          setMode(data.mode ?? null);
+          setMapId(data.map_id ?? null);
           localStorage.setItem("match", JSON.stringify(data));
           setStatus("Combat en cours");
+          launchUnityMatch(data);
         } else {
           setStatus("Aucun match");
         }
@@ -115,6 +169,12 @@ export default function Game() {
         {opponent && currentUser && (
           <>
             <div className="mb-4 text-sm text-slate-400">Match ID: {matchId}</div>
+            <div className="mb-8 text-center text-sm text-slate-400">
+              <p>Mode: {mode || "-"}</p>
+              <p>
+                Scene Unity: {mapId ? `Game avec map #${mapId}` : "Game par defaut"}
+              </p>
+            </div>
 
             <div className="mb-10 flex items-center gap-16">
               <div className="text-center">
@@ -132,7 +192,21 @@ export default function Game() {
             </div>
 
             {!winner && (
-              <div className="flex gap-6">
+              <div className="flex flex-wrap justify-center gap-6">
+                <button
+                  onClick={() =>
+                    launchUnityMatch({
+                      match_id: matchId,
+                      opponent,
+                      mode,
+                      map_id: mapId,
+                    }, true)
+                  }
+                  className="rounded-xl bg-cyan-500 px-6 py-3 transition-all duration-200 hover:scale-110 hover:shadow-2xl hover:shadow-cyan-500/20 active:scale-95"
+                >
+                  {unityLaunchAttempted ? "Relancer Unity" : "Ouvrir Unity"}
+                </button>
+
                 <button
                   onClick={handleWin}
                   disabled={isSubmitting}

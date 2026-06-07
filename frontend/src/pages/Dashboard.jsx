@@ -45,23 +45,24 @@ export default function Dashboard() {
 
   useEffect(() => {
     const load = async () => {
+      let me = null;
       try {
-        const me = await getMe();
+        me = await getMe();
         setCurrentUser(me);
         setElo(me.ranked_elo ?? me.elo ?? 0);
         setRank(me.rank ?? "");
         setPlayerStatus(me.player_status ?? "online");
+      } catch {
+        // user not authenticated or token expired
+        setCurrentUser(null);
+      }
 
-        const [summaryData, leaderboardData, distributionData, questsData, winrateData] =
-          await Promise.all([
-            getDashboardSummary(),
-            getLeaderboard("ranked"),
-            getRankDistribution(),
-            getMyQuests(),
-            getPlayerWinrate(me.id),
-          ]);
+      try {
+        const [leaderboardData, distributionData] = await Promise.all([
+          getLeaderboard("ranked"),
+          getRankDistribution(),
+        ]);
 
-        setSummary(summaryData);
         setLeaderboard(leaderboardData);
         setRankDistribution(
           Object.entries(distributionData.distribution || {}).map(([label, value]) => ({
@@ -70,17 +71,32 @@ export default function Dashboard() {
             color: rankColors[label.split(" ")[0]] || "#22d3ee",
           }))
         );
-        setQuests(questsData.quests || []);
-        setWinrate(winrateData);
-      } catch (error) {
-        console.error("Unable to load dashboard data", error);
+      } catch (err) {
+        console.error("Unable to load public dashboard data", err);
+      }
+
+      if (me) {
+        try {
+          const [summaryData, questsData, winrateData] = await Promise.all([
+            getDashboardSummary(),
+            getMyQuests(),
+            getPlayerWinrate(me.id),
+          ]);
+
+          setSummary(summaryData);
+          setQuests(questsData.quests || []);
+          setWinrate(winrateData);
+        } catch (err) {
+          console.error("Unable to load private dashboard data", err);
+        }
       }
     };
 
     load();
 
     const token = localStorage.getItem("token");
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/matchmaking?token=${token}`);
+    const wsUrl = token ? `ws://127.0.0.1:8000/ws/matchmaking?token=${token}` : `ws://127.0.0.1:8000/ws/matchmaking`;
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       setStatus("Connecte au serveur");
@@ -132,7 +148,7 @@ export default function Dashboard() {
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-cyan-400 drop-shadow-[0_0_20px_rgba(0,212,255,0.7)]">
-              GameDash Dashboard
+              EloVerse Dashboard
             </h1>
             <p className="mt-2 max-w-3xl text-slate-400">
               Vue competitive complete: MMR par mode, rang, niveau, progression et quetes.
