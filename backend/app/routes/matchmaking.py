@@ -429,7 +429,12 @@ async def join_queue(payload: JoinQueuePayload, user: User = Depends(get_current
         if created_match:
             return created_match
 
-        return {"message": "Already in queue", "mode": existing.mode, "player_status": user.player_status}
+        return {
+            "message": "Already in queue",
+            "mode": existing.mode,
+            "queue_id": existing.id,
+            "player_status": user.player_status,
+        }
 
     player = QueuePlayer(user_id=user.id, mode=mode)
     db.add(player)
@@ -444,6 +449,7 @@ async def join_queue(payload: JoinQueuePayload, user: User = Depends(get_current
     return {
         "message": "Joined queue",
         "mode": mode,
+        "queue_id": player.id,
         "player_status": "queue",
         "max_wait_seconds": settings.max_wait_seconds,
         "max_elo_gap": settings.max_elo_gap,
