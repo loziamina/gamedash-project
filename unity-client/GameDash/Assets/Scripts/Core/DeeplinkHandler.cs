@@ -56,13 +56,6 @@ public class DeeplinkHandler : MonoBehaviour
             return;
         }
 
-        if (url.StartsWith("gamedash://queue", StringComparison.OrdinalIgnoreCase))
-        {
-            Debug.Log("[Deeplink] Queue détectée : " + url);
-            HandleQueueDeeplink(url);
-            return;
-        }
-
         if (url.StartsWith("gamedash://editor", StringComparison.OrdinalIgnoreCase))
         {
             Debug.Log("[Deeplink] Editor détecté : " + url);
@@ -92,13 +85,6 @@ public class DeeplinkHandler : MonoBehaviour
             {
                 Debug.Log("[Deeplink] Match détecté : " + arg);
                 HandleMatchDeeplink(arg);
-                return;
-            }
-
-            if (arg.StartsWith("gamedash://queue", StringComparison.OrdinalIgnoreCase))
-            {
-                Debug.Log("[Deeplink] Queue détectée : " + arg);
-                HandleQueueDeeplink(arg);
                 return;
             }
 
@@ -267,7 +253,7 @@ public class DeeplinkHandler : MonoBehaviour
 
         if (!ok) { Application.Quit(); yield break; }
 
-        GameManager.Instance.StartMatchmaking(mode);
+        Debug.LogWarning("[Deeplink] gamedash://queue est désactivé. La queue doit être rejointe depuis le frontend.");
     }
 
     private IEnumerator LoadProfileThenMatch(int matchId, int opponentId, string mode, int mapId, int expectedPlayerId = 0)

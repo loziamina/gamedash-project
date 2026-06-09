@@ -31,6 +31,8 @@ const MODES = [
   },
 ];
 
+const SEARCH_SESSION_KEY = "gamedash_matchmaking_started";
+
 export default function Matchmaking() {
   const [status, setStatus] = useState("Idle");
   const [match, setMatch] = useState(null);
@@ -40,6 +42,9 @@ export default function Matchmaking() {
   const [settings, setSettings] = useState(null);
   const [overview, setOverview] = useState(null);
   const [queuedMode, setQueuedMode] = useState(null);
+  const [searchingStarted, setSearchingStarted] = useState(
+    sessionStorage.getItem(SEARCH_SESSION_KEY) === "true"
+  );
 
   const findQueuedMode = (overviewData, userId) => {
     if (!overviewData || !userId) {
@@ -81,6 +86,12 @@ export default function Matchmaking() {
       setOverview(overviewData);
 
       activeQueueMode = findQueuedMode(overviewData, me?.id);
+
+      if (activeQueueMode && sessionStorage.getItem(SEARCH_SESSION_KEY) !== "true") {
+        await leaveQueue();
+        activeQueueMode = null;
+      }
+
       setQueuedMode(activeQueueMode);
       if (activeQueueMode) {
         setSelectedMode(activeQueueMode);
@@ -140,7 +151,7 @@ export default function Matchmaking() {
   }, []);
 
   useEffect(() => {
-    if (currentUser?.player_status !== "queue" && !queuedMode) {
+    if (!searchingStarted || (currentUser?.player_status !== "queue" && !queuedMode)) {
       return undefined;
     }
 
@@ -169,7 +180,7 @@ export default function Matchmaking() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [currentUser?.player_status, currentUser?.id, queuedMode, selectedMode]);
+  }, [currentUser?.player_status, currentUser?.id, queuedMode, selectedMode, searchingStarted]);
 
   const handleJoin = async () => {
     try {
@@ -195,6 +206,8 @@ export default function Matchmaking() {
         prev ? { ...prev, player_status: res.player_status || "queue" } : prev
       );
       setQueuedMode(res.mode || selectedMode);
+      sessionStorage.setItem(SEARCH_SESSION_KEY, "true");
+      setSearchingStarted(true);
       toast.success(res.message || "Recherche lancee");
       await refreshData();
     } catch (error) {
@@ -213,6 +226,8 @@ export default function Matchmaking() {
         prev ? { ...prev, player_status: res.player_status || "online" } : prev
       );
       setQueuedMode(null);
+      sessionStorage.removeItem(SEARCH_SESSION_KEY);
+      setSearchingStarted(false);
       toast.success(res.message || "File quittee");
       await refreshData();
     } catch (error) {
