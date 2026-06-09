@@ -19,7 +19,55 @@ public class DeeplinkHandler : MonoBehaviour
 
     void Start()
     {
+        Application.deepLinkActivated += OnDeepLinkActivated;
+
+        if (!string.IsNullOrEmpty(Application.absoluteURL))
+        {
+            OnDeepLinkActivated(Application.absoluteURL);
+            return;
+        }
+
         ParseCommandLineArgs();
+    }
+
+    void OnDestroy()
+    {
+        Application.deepLinkActivated -= OnDeepLinkActivated;
+    }
+
+    private void OnDeepLinkActivated(string url)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return;
+        }
+
+        if (url.StartsWith("gamedash://testmap", StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("[Deeplink] TestMap détecté : " + url);
+            HandleTestMapDeeplink(url);
+            return;
+        }
+
+        if (url.StartsWith("gamedash://match", StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("[Deeplink] Match détecté : " + url);
+            HandleMatchDeeplink(url);
+            return;
+        }
+
+        if (url.StartsWith("gamedash://queue", StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("[Deeplink] Queue détectée : " + url);
+            HandleQueueDeeplink(url);
+            return;
+        }
+
+        if (url.StartsWith("gamedash://editor", StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.Log("[Deeplink] Editor détecté : " + url);
+            HandleEditorDeeplink(url);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────

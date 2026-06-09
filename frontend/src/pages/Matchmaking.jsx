@@ -59,36 +59,6 @@ export default function Matchmaking() {
     window.location.href = "/game";
   };
 
-  const buildUnityQueueDeeplink = (mode) => {
-    const token = localStorage.getItem("token");
-
-    if (!token || !mode) {
-      return null;
-    }
-
-    const params = new URLSearchParams({ mode, token });
-    return `gamedash://queue?${params.toString()}`;
-  };
-
-  const launchUnityQueue = (mode) => {
-    const deeplink = buildUnityQueueDeeplink(mode);
-
-    if (!deeplink) {
-      return false;
-    }
-
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = deeplink;
-    document.body.appendChild(iframe);
-
-    setTimeout(() => {
-      iframe.remove();
-    }, 3000);
-
-    return true;
-  };
-
   const refreshData = async () => {
     // load user if available, but don't fail the whole flow if not logged
     let me = null;
@@ -226,7 +196,6 @@ export default function Matchmaking() {
       );
       setQueuedMode(res.mode || selectedMode);
       toast.success(res.message || "Recherche lancee");
-      launchUnityQueue(res.mode || selectedMode);
       await refreshData();
     } catch (error) {
       console.error(error);

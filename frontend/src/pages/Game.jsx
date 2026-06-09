@@ -84,7 +84,6 @@ export default function Game() {
           setMapId(data.map_id ?? null);
           localStorage.setItem("match", JSON.stringify(data));
           setStatus("Combat en cours");
-          launchUnityMatch(data);
         } else {
           setStatus("Aucun match");
         }
