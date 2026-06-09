@@ -47,6 +47,13 @@ public class DeeplinkHandler : MonoBehaviour
                 return;
             }
 
+            if (arg.StartsWith("gamedash://queue", StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.Log("[Deeplink] Queue détectée : " + arg);
+                HandleQueueDeeplink(arg);
+                return;
+            }
+
             // Deeplink éditeur de maps
             if (arg.StartsWith("gamedash://editor", StringComparison.OrdinalIgnoreCase))
             {
@@ -138,12 +145,10 @@ public class DeeplinkHandler : MonoBehaviour
             return;
         }
 
-        if (!query.TryGetValue("map_id", out string mapIdStr) ||
-            !int.TryParse(mapIdStr, out int mapId))
+        int mapId = 0;
+        if (query.TryGetValue("map_id", out string mapIdStr))
         {
-            Debug.LogError("[Deeplink] map_id manquant dans : " + url);
-            Application.Quit();
-            return;
+            int.TryParse(mapIdStr, out mapId);
         }
 
         if (!query.TryGetValue("opponent", out string opponentStr) ||
@@ -164,6 +169,40 @@ public class DeeplinkHandler : MonoBehaviour
         query.TryGetValue("mode", out string mode);
         ApiManager.Instance.InjectToken(token);
         StartCoroutine(LoadProfileThenMatch(matchId, opponentId, mode, mapId));
+    }
+
+    private void HandleQueueDeeplink(string url)
+    {
+        var query = ParseQuery(url);
+
+        if (!query.TryGetValue("token", out string token) || string.IsNullOrEmpty(token))
+        {
+            Debug.LogError("[Deeplink] token manquant dans : " + url);
+            Application.Quit();
+            return;
+        }
+
+        query.TryGetValue("mode", out string mode);
+        if (string.IsNullOrEmpty(mode))
+        {
+            mode = "ranked";
+        }
+
+        ApiManager.Instance.InjectToken(token);
+        StartCoroutine(LoadProfileThenQueue(mode));
+    }
+
+    private IEnumerator LoadProfileThenQueue(string mode)
+    {
+        bool ok = false;
+        yield return ApiManager.Instance.GetMe(
+            (profile) => { GameManager.Instance.SetLocalPlayer(profile); ok = true; },
+            (err)     => Debug.LogError("[Deeplink] GetMe échoué : " + err)
+        );
+
+        if (!ok) { Application.Quit(); yield break; }
+
+        GameManager.Instance.StartMatchmaking(mode);
     }
 
     private IEnumerator LoadProfileThenMatch(int matchId, int opponentId, string mode, int mapId)
