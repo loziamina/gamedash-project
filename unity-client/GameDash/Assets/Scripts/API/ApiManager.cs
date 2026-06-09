@@ -21,11 +21,6 @@ public class ApiManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
         _token = GetLaunchToken();
-
-        if (string.IsNullOrEmpty(_token))
-        {
-            _token = PlayerPrefs.GetString("jwt_token", "");
-        }
     }
 
     // ── AUTH ──────────────────────────────────────────────────────
@@ -38,8 +33,6 @@ public class ApiManager : MonoBehaviour
         {
             var resp = JsonUtility.FromJson<LoginResponse>(json);
             _token = resp.access_token;
-            PlayerPrefs.SetString("jwt_token", _token);
-            PlayerPrefs.Save();
             onSuccess?.Invoke(resp);
         }, onError);
     }
@@ -55,8 +48,6 @@ public class ApiManager : MonoBehaviour
     public void Logout()
     {
         _token = "";
-        PlayerPrefs.DeleteKey("jwt_token");
-        PlayerPrefs.Save();
     }
 
     /// <summary>Injecte un token JWT directement (utilisé par le deeplink).</summary>

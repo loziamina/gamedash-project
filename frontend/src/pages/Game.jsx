@@ -60,10 +60,8 @@ export default function Game() {
         const me = await getMe();
         setCurrentUser(me);
 
-        const matchData = localStorage.getItem("match");
-        const parsedLocalMatch = matchData ? JSON.parse(matchData) : null;
         const currentMatchData = await getCurrentMatch();
-        const data = currentMatchData?.match || parsedLocalMatch;
+        const data = currentMatchData?.match;
 
         if (data) {
           setMatchId(data.match_id ?? null);
