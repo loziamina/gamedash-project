@@ -68,6 +68,12 @@ public class GameController : MonoBehaviour
             statusText.text = $"Map chargée ({MapTestController.PendingMap.cells.Count} tuiles)";
         }
 
+        if (MapTestController.PendingMap == null)
+        {
+            BuildDemoMap();
+            statusText.text = "Map de combat par defaut";
+        }
+
         UpdateHUD();
         endPanel.SetActive(false);
         surrenderButton.onClick.AddListener(OnSurrender);
@@ -98,6 +104,67 @@ public class GameController : MonoBehaviour
             if (cell.type == 3) tile.tag = "SpawnP1";
             if (cell.type == 4) tile.tag = "SpawnP2";
         }
+    }
+
+    private GameObject GetPrefabForType(int type)
+    {
+        Color[] colors = new Color[]
+        {
+            Color.clear,
+            new Color(0.55f, 0.35f, 0.15f),
+            new Color(0.20f, 0.75f, 0.25f),
+            new Color(0.10f, 0.55f, 0.95f),
+            new Color(0.95f, 0.20f, 0.20f),
+            new Color(1.00f, 0.90f, 0.00f),
+        };
+
+        if (type <= 0 || type >= colors.Length) return null;
+
+        var go = new GameObject($"tile_t{type}");
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.color = colors[type];
+
+        var tex = new Texture2D(32, 32);
+        var pixels = new Color[32 * 32];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = Color.white;
+        tex.SetPixels(pixels);
+        tex.Apply();
+        sr.sprite = Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
+        go.transform.localScale = new Vector3(1f, 1f, 1f);
+
+        return go;
+    }
+
+    private void BuildDemoMap()
+    {
+        var demoData = new MapData("Combat", "", 16, 12);
+
+        for (int x = 0; x < 16; x++)
+        {
+            demoData.cells.Add(new MapCell { x = x, y = 0, type = 1 });
+            demoData.cells.Add(new MapCell { x = x, y = 11, type = 1 });
+        }
+
+        for (int y = 1; y < 11; y++)
+        {
+            demoData.cells.Add(new MapCell { x = 0, y = y, type = 1 });
+            demoData.cells.Add(new MapCell { x = 15, y = y, type = 1 });
+        }
+
+        for (int y = 1; y < 11; y++)
+        {
+            for (int x = 1; x < 15; x++)
+            {
+                demoData.cells.Add(new MapCell { x = x, y = y, type = 2 });
+            }
+        }
+
+        demoData.cells.Add(new MapCell { x = 2, y = 2, type = 3 });
+        demoData.cells.Add(new MapCell { x = 13, y = 9, type = 4 });
+        demoData.cells.Add(new MapCell { x = 7, y = 5, type = 5 });
+        demoData.cells.Add(new MapCell { x = 8, y = 5, type = 5 });
+
+        BuildMap(demoData);
     }
 
     void Update()

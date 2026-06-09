@@ -166,6 +166,7 @@ export default function Matchmaking() {
             opponent:
               currentUser?.id === res.players?.[0] ? res.players?.[1] : res.players?.[0],
             mode: res.mode || modeToMatch,
+            map_id: res.map_id,
             status: "in_game",
           };
 
@@ -193,6 +194,7 @@ export default function Matchmaking() {
           opponent:
             currentUser?.id === res.players?.[0] ? res.players?.[1] : res.players?.[0],
           mode: res.mode || selectedMode,
+          map_id: res.map_id,
           status: "in_game",
         };
 

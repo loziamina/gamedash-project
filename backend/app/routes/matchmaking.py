@@ -94,6 +94,47 @@ def set_user_elo_for_mode(user: User, mode: str, value: int):
         user.elo = value
 
 
+def choose_match_map(db: Session):
+    published_map = (
+        db.query(Map)
+        .filter(
+            Map.hidden.is_(False),
+            Map.content_url.isnot(None),
+            Map.content_url != "",
+            Map.status == "published",
+        )
+        .order_by(Map.featured.desc(), Map.tests_count.desc(), Map.id.asc())
+        .first()
+    )
+
+
+def ensure_match_map(db: Session, match: Match):
+    if match.map_id:
+        return
+
+    selected_map = choose_match_map(db)
+    if not selected_map:
+        return
+
+    match.map_id = selected_map.id
+    db.commit()
+    db.refresh(match)
+
+    if published_map:
+        return published_map
+
+    return (
+        db.query(Map)
+        .filter(
+            Map.hidden.is_(False),
+            Map.content_url.isnot(None),
+            Map.content_url != "",
+        )
+        .order_by(Map.featured.desc(), Map.tests_count.desc(), Map.id.asc())
+        .first()
+    )
+
+
 def serialize_match(match: Match, current_user: User, db: Session):
     player1 = db.query(User).filter(User.id == match.player1_id).first()
     player2 = db.query(User).filter(User.id == match.player2_id).first()
@@ -223,10 +264,12 @@ async def try_create_match_for_mode(
 
     first_user, second_user = best_candidate["users"]
     first_queue, second_queue = best_candidate["queue_entries"]
+    selected_map = choose_match_map(db)
 
     match = Match(
         player1_id=first_user.id,
         player2_id=second_user.id,
+        map_id=selected_map.id if selected_map else None,
         mode=mode,
         status="ongoing",
     )
@@ -267,6 +310,7 @@ async def try_create_match_for_mode(
         "message": "Match auto created",
         "match_id": match.id,
         "mode": mode,
+        "map_id": match.map_id,
         "players": [first_user.id, second_user.id],
         "elo_diff": best_candidate["elo_diff"],
         "waited_seconds": best_candidate["longest_wait"],
@@ -318,6 +362,8 @@ def get_current_match(user: User = Depends(get_current_user), db: Session = Depe
 
     if not match:
         return {"match": None}
+
+    ensure_match_map(db, match)
 
     opponent_id = match.player2_id if match.player1_id == user.id else match.player1_id
 
