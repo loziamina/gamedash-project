@@ -1,4 +1,4 @@
-const API = "http://127.0.0.1:8000";
+import { API_URL as API } from "../config";
 
 const authHeaders = (json = false) => ({
   ...(json ? { "Content-Type": "application/json" } : {}),

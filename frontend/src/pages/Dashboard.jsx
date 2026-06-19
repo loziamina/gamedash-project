@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import PageWrapper from "../components/PageWrapper";
+import { getWebSocketUrl } from "../config";
 import { getMe } from "../services/api";
 import {
   getDashboardSummary,
@@ -94,7 +95,7 @@ export default function Dashboard() {
     load();
 
     const token = localStorage.getItem("token");
-    const wsUrl = token ? `ws://127.0.0.1:8000/ws/matchmaking?token=${token}` : `ws://127.0.0.1:8000/ws/matchmaking`;
+    const wsUrl = getWebSocketUrl(token ? `/ws/matchmaking?token=${token}` : "/ws/matchmaking");
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

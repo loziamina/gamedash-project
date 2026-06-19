@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
 import UserMenu from "../components/UserMenu";
+import { API_URL, getWebSocketUrl } from "../config";
 import { getMe } from "../services/api";
 import { finishMatch } from "../services/game";
 import { getCurrentMatch } from "../services/matchmaking";
@@ -65,7 +66,7 @@ export default function Game() {
             try {
               const token = localStorage.getItem("token");
               const res = await fetch(
-                `http://127.0.0.1:8000/users/${data.opponent}/pseudo`,
+                `${API_URL}/users/${data.opponent}/pseudo`,
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               const json = await res.json();
@@ -91,7 +92,7 @@ export default function Game() {
     const token = localStorage.getItem("token");
     if (!token || !currentUser) return;
 
-    const ws = new WebSocket(`ws://127.0.0.1:8000/ws/matchmaking?token=${token}`);
+    const ws = new WebSocket(getWebSocketUrl(`/ws/matchmaking?token=${token}`));
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -109,7 +110,7 @@ export default function Game() {
         // Récupérer le pseudo de l'adversaire
         if (data.opponent) {
           fetch(
-            `http://127.0.0.1:8000/users/${data.opponent}/pseudo`,
+            `${API_URL}/users/${data.opponent}/pseudo`,
             { headers: { Authorization: `Bearer ${token}` } }
           )
             .then((r) => r.json())

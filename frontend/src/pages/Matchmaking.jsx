@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import BackToDashboardButton from "../components/BackToDashboardButton";
 import PageWrapper from "../components/PageWrapper";
+import { getWebSocketUrl } from "../config";
 import { getMe } from "../services/api";
 import {
   createMatch,
@@ -130,7 +131,7 @@ export default function Matchmaking() {
     refreshData();
 
     const token = localStorage.getItem("token");
-    const wsUrl = token ? `ws://127.0.0.1:8000/ws/matchmaking?token=${token}` : `ws://127.0.0.1:8000/ws/matchmaking`;
+    const wsUrl = getWebSocketUrl(token ? `/ws/matchmaking?token=${token}` : "/ws/matchmaking");
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {
