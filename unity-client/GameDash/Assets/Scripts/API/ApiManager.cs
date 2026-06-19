@@ -106,9 +106,9 @@ public class ApiManager : MonoBehaviour
         yield return Post("/matchmaking/leave", "{}", true, (_) => onSuccess?.Invoke(), onError);
     }
 
-    public IEnumerator GetCurrentMatch(Action<CurrentMatchResponse> onSuccess, Action<string> onError)
+    public IEnumerator GetCurrentMatch(string mode, Action<CurrentMatchResponse> onSuccess, Action<string> onError)
     {
-        yield return Get("/matchmaking/current", (json) =>
+        yield return Get($"/matchmaking/current?mode={UnityWebRequest.EscapeURL(mode)}", (json) =>
         {
             onSuccess?.Invoke(JsonUtility.FromJson<CurrentMatchResponse>(json));
         }, onError);
@@ -195,7 +195,7 @@ public class ApiManager : MonoBehaviour
     }
 }
 
-
+// ── DTOs ──────────────────────────────────────────────────────────────────────
 
 [Serializable] public class LoginRequest  { public string email; public string password; }
 [Serializable] public class LoginResponse { public string access_token; public string token_type; }
@@ -219,15 +219,14 @@ public class UserProfile
 [Serializable] public class PseudoResponse   { public int id; public string pseudo; }
 [Serializable] public class JoinQueueRequest { public string mode; }
 
-
 [Serializable]
 public class QueueResponse
 {
     public string message;
     public string status;
-    public int    match_id;  
-    public int    opponent;  
-    public int    map_id;    
+    public int    match_id;
+    public int    opponent;
+    public int    map_id;
 }
 
 [Serializable]

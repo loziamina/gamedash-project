@@ -363,16 +363,19 @@ def queue_overview(user: User = Depends(get_current_user), db: Session = Depends
 
 
 @router.get("/current")
-def get_current_match(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    match = (
-        db.query(Match)
-        .filter(
-            or_(Match.player1_id == user.id, Match.player2_id == user.id),
-            Match.status == "ongoing",
-        )
-        .order_by(Match.created_at.desc())
-        .first()
+def get_current_match(
+    mode: str | None = Query(default=None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Match).filter(
+        or_(Match.player1_id == user.id, Match.player2_id == user.id),
+        Match.status == "ongoing",
     )
+    if mode in ALLOWED_MODES:
+        query = query.filter(Match.mode == mode)
+
+    match = query.order_by(Match.created_at.desc()).first()
 
     if not match:
         return {"match": None}

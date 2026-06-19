@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
     public float pollInterval = 2f;
 
     private Coroutine _pollingCoroutine;
-    private bool      _matchFound = false; 
+    private bool      _matchFound = false;
 
     void Awake()
     {
@@ -38,7 +38,7 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    
+    // ── AUTH ──────────────────────────────────────────────────────
 
     public void OnLoginSuccess(UserProfile profile)
     {
@@ -75,11 +75,19 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(mapEditorScene);
     }
 
-    
+    // ── MATCHMAKING ───────────────────────────────────────────────
 
     public void StartMatchmaking(string mode)
     {
-        CurrentMode  = mode;
+        CurrentMode       = mode;
+        CurrentMatchId    = 0;
+        CurrentOpponentId = 0;
+        CurrentMapId      = 0;
+
+        MapTestController.PendingMap      = null;
+        MapTestController.PendingMapId    = -1;
+        MapTestController.PendingMapTitle = "Map sans titre";
+
         _matchFound  = false;
         TransitionTo(GameState.InQueue);
         StartCoroutine(JoinAndPoll(mode));
@@ -99,72 +107,59 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator JoinAndPoll(string mode)
     {
-        bool   joined       = false;
-        int    directMatchId = 0;
-        int    directOpponent = 0;
-        int    directMapId   = 0;
+        bool joined = false;
 
         yield return ApiManager.Instance.JoinQueue(mode,
             (resp) =>
             {
                 Debug.Log($"[JoinQueue] message={resp.message} match_id={resp.match_id}");
                 joined = true;
-
-                
-                if (resp.match_id > 0)
-                {
-                    directMatchId   = resp.match_id;
-                    directOpponent  = resp.opponent;
-                    directMapId     = resp.map_id;
-                }
             },
             (err) => Debug.LogError("JoinQueue: " + err)
         );
 
         if (!joined) { TransitionTo(GameState.MainMenu); yield break; }
 
-        
-        if (directMatchId > 0)
-        {
-            _matchFound       = true;
-            CurrentMatchId    = directMatchId;
-            CurrentOpponentId = directOpponent;
-            CurrentMapId      = directMapId;
-            Debug.Log($"[GameManager] Match immédiat : {CurrentMatchId} vs {CurrentOpponentId}");
-            StartGame();
-            yield break;
-        }
+        yield return TryResolveMatch(mode);
+        if (_matchFound) yield break;
 
-        
-        _pollingCoroutine = StartCoroutine(PollForMatch());
+        _pollingCoroutine = StartCoroutine(PollForMatch(mode));
     }
 
-    private IEnumerator PollForMatch()
+    private IEnumerator PollForMatch(string mode)
     {
         while (CurrentState == GameState.InQueue && !_matchFound)
         {
             yield return new WaitForSeconds(pollInterval);
-
             if (_matchFound) yield break;
 
-            yield return ApiManager.Instance.GetCurrentMatch(
-                (resp) =>
-                {
-                    if (_matchFound) return;
-                    if (resp.match != null && resp.match.match_id > 0)
-                    {
-                        _matchFound       = true;
-                        CurrentMatchId    = resp.match.match_id;
-                        CurrentOpponentId = resp.match.opponent;
-                        CurrentMode       = resp.match.mode;
-                        CurrentMapId      = resp.match.map_id;
-                        Debug.Log($"[GameManager] Match trouvé (poll) : {CurrentMatchId} vs {CurrentOpponentId}");
-                        StartGame();
-                    }
-                },
-                (err) => Debug.LogWarning("PollForMatch: " + err)
-            );
+            yield return TryResolveMatch(mode);
+            if (_matchFound) yield break;
+
+            yield return ApiManager.Instance.JoinQueue(mode,
+                (resp) => { },
+                (err) => Debug.LogWarning("PollForMatch/join: " + err));
         }
+    }
+
+    private IEnumerator TryResolveMatch(string mode)
+    {
+        yield return ApiManager.Instance.GetCurrentMatch(mode,
+            (resp) =>
+            {
+                if (_matchFound) return;
+                if (resp.match != null && resp.match.match_id > 0)
+                {
+                    _matchFound       = true;
+                    CurrentMatchId    = resp.match.match_id;
+                    CurrentOpponentId = resp.match.opponent;
+                    CurrentMode       = resp.match.mode;
+                    CurrentMapId      = resp.match.map_id;
+                    Debug.Log($"[GameManager] Match trouvé : {CurrentMatchId} vs {CurrentOpponentId}");
+                    StartGame();
+                }
+            },
+            (err) => Debug.LogWarning("GetCurrentMatch: " + err));
     }
 
     public void StartMatchFromDeeplink(int matchId, int opponentId, string mode, int mapId)
@@ -216,7 +211,7 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(gameScene);
     }
 
-    
+    // ── FIN DE MATCH ──────────────────────────────────────────────
 
     public void ReportMatchEnd(int winnerId)
     {
@@ -254,7 +249,7 @@ public class GameManager : MonoBehaviour
         );
     }
 
-    
+    // ── Utilitaires ───────────────────────────────────────────────
 
     private void TransitionTo(GameState next)
     {
