@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "../config";
 import { login } from "../services/api";
 
 export default function Login() {
@@ -142,7 +143,7 @@ export default function Login() {
               </button>
               <button
                 onClick={() => {
-                  window.location.href = "http://localhost:8000/auth/google";
+                  window.location.href = `${API_URL}/auth/google`;
                 }}
                 className="sso-btn flex h-14 items-center justify-center gap-3 rounded-2xl border-2 border-white/20 bg-white/5 px-6 font-mono font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-pink-400 hover:bg-pink-500/10 hover:shadow-xl hover:shadow-pink-400/30"
               >
