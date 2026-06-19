@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "serve -s dist -l ${PORT:-8080}",
+    "start": "node scripts/start-azure.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
