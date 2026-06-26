@@ -62,11 +62,15 @@ Le frontend est organise dans `frontend/src` avec trois zones principales :
 ### Composants
 
 - `UserMenu.jsx`
+- `MobileNav.jsx`
+- `AppLayout.jsx`
+- `ProtectedLayout.jsx`
 - `BackToDashboardButton.jsx`
 - `PageWrapper.jsx`
 
 ### Services
 
+- `config.js`
 - `api.js`
 - `matchmaking.js`
 - `game.js`
@@ -133,11 +137,12 @@ Le backend est organise dans `backend/app` :
 
 ### Produit / UX
 
-- navigation gaming coherente
-- retour dashboard sur les pages connectees
+- refonte mobile first de la navigation joueur
+- shell responsive avec `AppLayout.jsx`, `MobileNav.jsx` et `ProtectedLayout.jsx`
+- centralisation de la configuration API avec `frontend/src/config.js`
 - feedback utilisateur avec notifications in-app
 - mise en avant des maps et createurs dans les interfaces communautaires
-- base exploitable pour une experience mobile first plus poussee
+- deploiement frontend/backend sur Microsoft Azure
 - base exploitable pour des saisons competitives et saisons createurs
 
 ### Boutique / Economie
@@ -300,4 +305,5 @@ npm run dev
 - [plan-securite-conformite.md](https://github.com/loziamina/gamedash-project/blob/main/docs/plan-securite-conformite.md)
 - [guide-utilisateur.md](https://github.com/loziamina/gamedash-project/blob/main/docs/guide-utilisateur.md)
 - [boutique-economie.md](https://github.com/loziamina/gamedash-project/blob/main/docs/boutique-economie.md)
+- [produit-ux-deploiement-azure.md](https://github.com/loziamina/gamedash-project/blob/main/docs/produit-ux-deploiement-azure.md)
 - [Partie matchmaking.docs](https://github.com/loziamina/gamedash-project/blob/main/docs/Partie matchmaking.docs)

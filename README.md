@@ -14,6 +14,13 @@ Le projet permet :
 - saisons competitives et recompenses createurs
 - boutique / economie virtuelle / inventaire
 
+## Deploiement (production)
+
+- **Application** : [gamedash-web-anas](https://gamedash-web-anas-f0gkfwgrcmdyf6at.italynorth-01.azurewebsites.net)
+- **API** : [gamedash-api-anas](https://gamedash-api-anas-dmh6dafyeaemfjhj.italynorth-01.azurewebsites.net)
+- **Swagger** : [OpenAPI /docs](https://gamedash-api-anas-dmh6dafyeaemfjhj.italynorth-01.azurewebsites.net/docs)
+- **Documentation deploiement** : [docs/produit-ux-deploiement-azure.md](docs/produit-ux-deploiement-azure.md)
+
 ## Equipe projet
 
 Projet realise par :
@@ -278,6 +285,7 @@ Document deja present :
 
 - [matchmaking-algorithm.md](https://github.com/loziamina/gamedash-project/blob/main/docs/matchmaking-algorithm.md)
 - [boutique-economie.md](https://github.com/loziamina/gamedash-project/blob/main/docs/boutique-economie.md)
+- [produit-ux-deploiement-azure.md](https://github.com/loziamina/gamedash-project/blob/main/docs/produit-ux-deploiement-azure.md)
 - [documentation-technique.md](https://github.com/loziamina/gamedash-project/blob/main/docs/documentation-technique.md)
 - [guide-utilisateur.md](https://github.com/loziamina/gamedash-project/blob/main/docs/guide-utilisateur.md)
 - [plan-securite-conformite.md](https://github.com/loziamina/gamedash-project/blob/main/docs/plan-securite-conformite.md)
